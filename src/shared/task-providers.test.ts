@@ -16,7 +16,13 @@ describe('task providers', () => {
   })
 
   it('falls back to all providers when none are visible', () => {
-    expect(normalizeVisibleTaskProviders([])).toEqual(['github', 'gitlab', 'linear', 'jira'])
+    expect(normalizeVisibleTaskProviders([])).toEqual([
+      'github',
+      'gitlab',
+      'linear',
+      'jira',
+      'obsidian'
+    ])
   })
 
   it('restores a valid saved default when provider settings drifted', () => {
@@ -54,6 +60,15 @@ describe('task providers', () => {
         linearConnected: true
       })
     ).toEqual(['github', 'linear'])
+  })
+
+  it('keeps the local Obsidian shortcut available without provider auth', () => {
+    expect(
+      filterAvailableTaskProviders(['obsidian'], {
+        gitlabInstalled: false,
+        linearConnected: false
+      })
+    ).toEqual(['obsidian'])
   })
 
   it('keeps an available saved default visible when provider visibility drifted', () => {

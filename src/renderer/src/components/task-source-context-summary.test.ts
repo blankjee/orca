@@ -8,6 +8,19 @@ import { getExecutionHostLabel } from '../../../shared/execution-host'
 const LOCAL_HOST_LABEL = getExecutionHostLabel('local')
 
 describe('task source context summary', () => {
+  it('shows the local Obsidian daily-note vault without a remote host label', () => {
+    expect(
+      getTaskSourceContextSummary({
+        provider: 'obsidian',
+        providerLabel: 'Obsidian',
+        obsidianVault: 'Work Notes'
+      })
+    ).toEqual({
+      label: 'Obsidian · Work Notes',
+      title: 'Obsidian daily notes · Vault: Work Notes'
+    })
+  })
+
   it('shows provider, host, and provider identity for a single repo-backed source', () => {
     const summary = getTaskSourceContextSummary({
       provider: 'github',

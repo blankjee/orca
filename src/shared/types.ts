@@ -2828,6 +2828,16 @@ export type GlobalSettings = {
   /** Why: one-shot migration guard so Jira becomes visible for existing
    *  profiles once, without re-adding it after a later deliberate opt-out. */
   visibleTaskProvidersDefaultedForJira: boolean
+  /** Why: one-shot migration guard so the local Obsidian shortcut is
+   *  discoverable without undoing a later deliberate provider opt-out. */
+  visibleTaskProvidersDefaultedForObsidian: boolean
+  /** Optional vault name or ID passed to Obsidian's Daily notes URI. An empty
+   *  value lets Obsidian resolve the destination from its active context. */
+  obsidianVault: string
+  /** Local directory containing Obsidian daily-note Markdown files. This is
+   *  deliberately separate from repo/runtime paths because the source always
+   *  belongs to the desktop running Orca. */
+  obsidianDailyNotesDirectory: string
   /** Why: persists the user's repo selection in the cross-repo tasks view.
    *  `null` means sticky-all — every eligible repo is selected, including
    *  repos added in future sessions, so the "All repos" label stays

@@ -161,7 +161,8 @@
             "36761d9604": "未知的键绑定操作“{{value0}}”被忽略。",
             "d2e43e426a": "{{value0}} 必须是一个对象。",
             "fb290366b2": "无法在网络上使用。",
-            "76122208ca": "“{{value0}}”的快捷方式被忽略：{{value1}}"
+            "76122208ca": "“{{value0}}”的快捷方式被忽略：{{value1}}",
+            "obsidianDesktopOnly": "本地 Obsidian 日报仅可在桌面应用中使用。"
           }
         },
         "runtime": {
@@ -1753,7 +1754,8 @@
         "jiraSortAscending": "升序",
         "jiraSortDescending": "降序",
         "jiraSortBy": "排序方式",
-        "jiraToggleSortDirection": "按{{value0}}排序"
+        "jiraToggleSortDirection": "按{{value0}}排序",
+        "obsidianSource": "Obsidian"
       },
       "Terminal": {
         "73768427cf": "关闭",
@@ -3926,7 +3928,8 @@
           "196c1b5362": "打开 GitLab 任务",
           "0ccba862b8": "打开 GitHub 任务",
           "fee535205b": "任务",
-          "d599269755": "从侧边栏隐藏"
+          "d599269755": "从侧边栏隐藏",
+          "openObsidianDailyNote": "打开 Obsidian 日报"
         },
         "SidebarRepositoryFilterSection": {
           "d3a9c4cea1": "清除",
@@ -6615,7 +6618,18 @@
           "dd67a1b6e1": "在任务源选择器和侧边栏快捷方式中显示 GitLab。",
           "7c5d7fdc20": "GitLab",
           "1db47236cd": "在任务源选择器和侧边栏快捷方式中显示 GitHub。",
-          "e14063e727": "GitHub"
+          "e14063e727": "GitHub",
+          "obsidianLabel": "Obsidian",
+          "obsidianDescription": "在任务页中跟进本地 Obsidian Markdown Todo。",
+          "obsidianDailyNotesTitle": "Obsidian 日报",
+          "obsidianDailyNotesDescription": "选择从 Obsidian 任务来源打开的本地仓库。",
+          "obsidianVaultLabel": "仓库名称或 ID",
+          "obsidianVaultDescription": "可选。日报目录、日期格式和模板仍由 Obsidian 管理。",
+          "obsidianVaultPlaceholder": "例如：工作笔记或仓库 ID",
+          "obsidianDirectoryLabel": "Obsidian 仓库根目录",
+          "obsidianDirectoryDescription": "Orca 会递归查找此目录中的今日日报及全部 YYYY-MM-DD.md 日报。",
+          "obsidianDirectoryPlaceholder": "选择 Obsidian 仓库根目录",
+          "chooseDirectory": "选择"
         },
         "TerminalAppearanceSection": {
           "a14a427ae4": "窗格分隔线的厚度。",
@@ -12842,7 +12856,9 @@
       "taskSourceContextSummary": {
         "sourceUnavailable": "{{value0}} 来源不可用：{{value1}}",
         "someSourceHostsUnavailable": "部分 {{value0}} 来源主机不可用：{{value1}}",
-        "reconnectOrUpdateTitle": "重新连接或更新 {{value0}} 以加载此来源。"
+        "reconnectOrUpdateTitle": "重新连接或更新 {{value0}} 以加载此来源。",
+        "activeVault": "当前仓库",
+        "obsidianTitle": "{{value0}} 日报 · 仓库：{{value1}}"
       },
       "ShortcutKeyCombo": {
         "07eb4985a1": "双击 {{value0}}"
@@ -13080,6 +13096,55 @@
           "undo": "撤销",
           "widthOption": "{{value0}} px"
         }
+      },
+      "ObsidianDailyNotePanel": {
+        "saveVaultFailed": "保存 Obsidian 仓库失败。",
+        "openFailed": "无法打开 Obsidian。请确认应用已安装，并已启用 URI 处理程序。",
+        "title": "打开今天的 Obsidian 日报",
+        "description": "日报目录、日期格式和模板沿用 Obsidian 日记核心插件中的配置。",
+        "vaultLabel": "仓库名称或 ID",
+        "vaultDescription": "可选。填写后可始终打开指定仓库的日报。",
+        "vaultPlaceholder": "例如：工作笔记或仓库 ID",
+        "openAction": "打开今天的日报"
+      },
+      "ObsidianDailyTodoPanel": {
+        "openFailed": "无法打开 Obsidian，请确认应用已安装。",
+        "title": "日报 Todo",
+        "notConfigured": "尚未配置",
+        "refresh": "刷新",
+        "openObsidian": "打开 Obsidian",
+        "addPlaceholder": "添加任务到当前日报",
+        "priority": "优先级",
+        "add": "添加",
+        "emptyTitle": "当前日报中还没有 Markdown Todo",
+        "emptyDescription": "可在上方添加，或在 Obsidian 中使用“- [ ] 任务”格式。",
+        "chooseTitle": "选择 Obsidian 仓库根目录",
+        "chooseDescription": "Orca 会自动查找仓库中今天及全部 YYYY-MM-DD.md 日报，无需定位到日报子目录。",
+        "chooseFolder": "选择文件夹",
+        "retry": "重试",
+        "total": "全部",
+        "pending": "待办",
+        "inProgress": "进行中",
+        "completed": "已完成",
+        "noteNotFound": "在此仓库中没有找到所选日报。",
+        "todayNotFound": "在此仓库中没有找到今天的日报。",
+        "historyAvailable": "可从上方日期菜单切换到任意已发现的历史日报。",
+        "directoryUnavailable": "Obsidian 仓库根目录不可用。",
+        "todoConflict": "此 Todo 已被其他应用修改，请刷新后重试。",
+        "accessFailed": "Orca 无法读取或更新所选日报。",
+        "priorityP1": "P1",
+        "priorityP2": "P2",
+        "priorityP3": "P3"
+      },
+      "ObsidianDailyTodoList": {
+        "noPriority": "无优先级",
+        "advanceStatus": "切换 Todo 状态",
+        "statusCycleHint": "待办 → 进行中 → 已完成"
+      },
+      "ObsidianDailyNotePicker": {
+        "label": "选择日报",
+        "todayMissing": "今天 · 未找到",
+        "count": "{{value0}} 篇日报"
       }
     },
     "i18n": {

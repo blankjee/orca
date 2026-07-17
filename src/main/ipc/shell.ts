@@ -153,7 +153,34 @@ export function registerShellHandlers(): void {
       return
     }
 
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    const isWebUrl = parsed.protocol === 'https:' || parsed.protocol === 'http:'
+    const obsidianParameterNames = [...parsed.searchParams.keys()]
+    const isObsidianDailyNoteUrl =
+      parsed.protocol === 'obsidian:' &&
+      parsed.hostname === 'daily' &&
+      (parsed.pathname === '' || parsed.pathname === '/') &&
+      parsed.username === '' &&
+      parsed.password === '' &&
+      parsed.port === '' &&
+      parsed.hash === '' &&
+      obsidianParameterNames.length <= 1 &&
+      parsed.searchParams.getAll('vault').length <= 1 &&
+      obsidianParameterNames.every((name) => name === 'vault')
+    const isObsidianOpenNoteUrl =
+      parsed.protocol === 'obsidian:' &&
+      parsed.hostname === 'open' &&
+      (parsed.pathname === '' || parsed.pathname === '/') &&
+      parsed.username === '' &&
+      parsed.password === '' &&
+      parsed.port === '' &&
+      parsed.hash === '' &&
+      parsed.searchParams.getAll('file').length === 1 &&
+      parsed.searchParams.getAll('vault').length <= 1 &&
+      obsidianParameterNames.length <= 2 &&
+      obsidianParameterNames.every((name) => name === 'vault' || name === 'file')
+    // Why: custom protocol launches can cross the renderer sandbox boundary;
+    // only the narrow Obsidian actions exposed by Orca are allowed through.
+    if (!isWebUrl && !isObsidianDailyNoteUrl && !isObsidianOpenNoteUrl) {
       return
     }
 

@@ -51,6 +51,11 @@ import type {
 } from '../shared/orca-profiles'
 import type { TerminalPaneSplitSource } from '../shared/feature-education-telemetry'
 import type { TaskSourceContext } from '../shared/task-source-context'
+import type {
+  ObsidianDailyTodoAddInput,
+  ObsidianDailyTodoResult,
+  ObsidianDailyTodoStatusUpdate
+} from '../shared/obsidian-daily-todo'
 import type { LinearIssueAttributeFilter } from '../shared/linear-issue-attribute-filter'
 import type { ProjectExecutionRuntimeResolution } from '../shared/project-execution-runtime'
 import type { StartupCommandDelivery } from '../shared/codex-startup-delivery'
@@ -2245,6 +2250,15 @@ export type PreloadApi = {
     pickAudio: () => Promise<string | null>
     pickDirectory: (args: { defaultPath?: string }) => Promise<string | null>
     copyFile: (args: { srcPath: string; destPath: string }) => Promise<void>
+  }
+  obsidianDailyTodos: {
+    load: (args: {
+      directory: string
+      filePath?: string
+      refresh?: boolean
+    }) => Promise<ObsidianDailyTodoResult>
+    setStatus: (args: ObsidianDailyTodoStatusUpdate) => Promise<ObsidianDailyTodoResult>
+    add: (args: ObsidianDailyTodoAddInput) => Promise<ObsidianDailyTodoResult>
   }
   skills: {
     discover: (target?: SkillDiscoveryTarget) => Promise<SkillDiscoveryResult>

@@ -726,6 +726,7 @@ function createWebPreloadApi(): Partial<PreloadApi> {
     computerUsePermissions: createComputerUsePermissionsApi(),
     updater: createUpdaterApi(),
     shell: createShellApi(),
+    obsidianDailyTodos: createObsidianDailyTodosApi(),
     skills: createSkillsApi(),
     pty: createPtyApi(),
     ssh: createSshApi(),
@@ -2784,6 +2785,22 @@ function createShellApi(): NonNullable<Partial<PreloadApi>['shell']> {
     pickAudio: () => Promise.resolve(null),
     pickDirectory: () => Promise.resolve(null),
     copyFile: () => Promise.resolve()
+  }
+}
+
+function createObsidianDailyTodosApi(): NonNullable<Partial<PreloadApi>['obsidianDailyTodos']> {
+  const unavailable = {
+    ok: false as const,
+    code: 'unavailable-on-web' as const,
+    message: translate(
+      'auto.web.web.preload.api.obsidianDesktopOnly',
+      'Local Obsidian daily notes are only available in the desktop app.'
+    )
+  }
+  return {
+    load: () => Promise.resolve(unavailable),
+    setStatus: () => Promise.resolve(unavailable),
+    add: () => Promise.resolve(unavailable)
   }
 }
 

@@ -160,6 +160,7 @@ import {
 } from '@/components/linear-project-view-surfaces'
 import JiraIssueWorkspace from '@/components/JiraIssueWorkspace'
 import { TaskPageJiraIssueList } from '@/components/task-page-jira-issue-list'
+import { ObsidianDailyTodoPanel } from '@/components/ObsidianDailyTodoPanel'
 import {
   getSingleJiraProjectScope,
   getTaskPageJiraStatusOrderScopeKey,
@@ -3627,11 +3628,13 @@ export default function TaskPage(): React.JSX.Element {
       selectedRepoCount: selectedRepos.length,
       linearWorkspaceName:
         selectedLinearWorkspace?.organizationName ?? selectedLinearWorkspace?.id ?? null,
-      jiraSiteName: selectedJiraSite?.displayName ?? selectedJiraSite?.siteUrl ?? null
+      jiraSiteName: selectedJiraSite?.displayName ?? selectedJiraSite?.siteUrl ?? null,
+      obsidianVault: settings?.obsidianVault ?? ''
     })
   }, [
     selectedJiraSite,
     selectedLinearWorkspace,
+    settings?.obsidianVault,
     selectedRepos.length,
     sourceOptions,
     taskSource,
@@ -9217,7 +9220,15 @@ export default function TaskPage(): React.JSX.Element {
             </section>
           </div>
 
-          {taskSource === 'github' && dialogWorkItem ? (
+          {taskSource === 'obsidian' ? (
+            <ObsidianDailyTodoPanel
+              directory={settings?.obsidianDailyNotesDirectory ?? ''}
+              vault={settings?.obsidianVault ?? ''}
+              onSaveDirectory={(directory) =>
+                updateSettings({ obsidianDailyNotesDirectory: directory })
+              }
+            />
+          ) : taskSource === 'github' && dialogWorkItem ? (
             dialogWorkItem.type === 'pr' ? (
               <PullRequestPage
                 workItem={dialogWorkItem}

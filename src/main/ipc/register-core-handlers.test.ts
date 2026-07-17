@@ -22,6 +22,7 @@ const {
   registerTelemetryHandlersMock,
   registerDiagnosticsHandlersMock,
   registerShellHandlersMock,
+  registerObsidianDailyTodoHandlersMock,
   registerPetHandlersMock,
   registerSessionHandlersMock,
   registerUIHandlersMock,
@@ -83,6 +84,7 @@ const {
   registerTelemetryHandlersMock: vi.fn(),
   registerDiagnosticsHandlersMock: vi.fn(),
   registerShellHandlersMock: vi.fn(),
+  registerObsidianDailyTodoHandlersMock: vi.fn(),
   registerPetHandlersMock: vi.fn(),
   registerSessionHandlersMock: vi.fn(),
   registerUIHandlersMock: vi.fn(),
@@ -238,6 +240,10 @@ vi.mock('./shell', () => ({
   registerShellHandlers: registerShellHandlersMock
 }))
 
+vi.mock('./obsidian-daily-todos', () => ({
+  registerObsidianDailyTodoHandlers: registerObsidianDailyTodoHandlersMock
+}))
+
 vi.mock('./pet', () => ({
   registerPetHandlers: registerPetHandlersMock
 }))
@@ -381,6 +387,7 @@ describe('registerCoreHandlers', () => {
     registerTelemetryHandlersMock.mockReset()
     registerDiagnosticsHandlersMock.mockReset()
     registerShellHandlersMock.mockReset()
+    registerObsidianDailyTodoHandlersMock.mockReset()
     registerPetHandlersMock.mockReset()
     registerSessionHandlersMock.mockReset()
     registerUIHandlersMock.mockReset()
@@ -513,6 +520,7 @@ describe('registerCoreHandlers', () => {
     expect(registerCliHandlersMock).toHaveBeenCalled()
     expect(registerPreflightHandlersMock).toHaveBeenCalled()
     expect(registerShellHandlersMock).toHaveBeenCalled()
+    expect(registerObsidianDailyTodoHandlersMock).toHaveBeenCalled()
     expect(registerClipboardHandlersMock).toHaveBeenCalledWith(store)
     expect(registerUpdaterHandlersMock).toHaveBeenCalled()
     expect(setTrustedBrowserRendererWebContentsIdMock).toHaveBeenCalledWith(null)

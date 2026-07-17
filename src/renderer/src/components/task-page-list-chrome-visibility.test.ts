@@ -66,5 +66,15 @@ describe('shouldHideTaskPageListChrome', () => {
         hasLinearIssueDetail: true
       })
     ).toBe(false)
+    expect(
+      shouldHideTaskPageListChrome({
+        ...baseState,
+        taskSource: 'obsidian',
+        hasGitHubDetail: true,
+        hasGitLabDetail: true,
+        hasJiraDetail: true,
+        hasLinearIssueDetail: true
+      })
+    ).toBe(false)
   })
 })

@@ -101,6 +101,11 @@ import type { WorkspacePortAdvertisedUrlChangedEvent } from '../shared/workspace
 import type { GhAuthDiagnostic } from '../shared/github-auth-types'
 import type { TaskSourceContext } from '../shared/task-source-context'
 import type {
+  ObsidianDailyTodoAddInput,
+  ObsidianDailyTodoResult,
+  ObsidianDailyTodoStatusUpdate
+} from '../shared/obsidian-daily-todo'
+import type {
   AddIssueCommentBySlugArgs,
   ClearProjectItemFieldArgs,
   DeleteIssueCommentBySlugArgs,
@@ -2212,6 +2217,18 @@ const api = {
 
     copyFile: (args: { srcPath: string; destPath: string }): Promise<void> =>
       ipcRenderer.invoke('shell:copyFile', args)
+  },
+
+  obsidianDailyTodos: {
+    load: (args: {
+      directory: string
+      filePath?: string
+      refresh?: boolean
+    }): Promise<ObsidianDailyTodoResult> => ipcRenderer.invoke('obsidianDailyTodos:load', args),
+    setStatus: (args: ObsidianDailyTodoStatusUpdate): Promise<ObsidianDailyTodoResult> =>
+      ipcRenderer.invoke('obsidianDailyTodos:setStatus', args),
+    add: (args: ObsidianDailyTodoAddInput): Promise<ObsidianDailyTodoResult> =>
+      ipcRenderer.invoke('obsidianDailyTodos:add', args)
   },
 
   skills: {

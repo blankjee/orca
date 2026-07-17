@@ -3035,11 +3035,18 @@ export class Store {
         })
         const visibleTaskProvidersDefaultedForJira =
           parsed.settings?.visibleTaskProvidersDefaultedForJira === true
-        const migratedVisibleTaskProviders = visibleTaskProvidersDefaultedForJira
+        const jiraMigratedVisibleTaskProviders = visibleTaskProvidersDefaultedForJira
           ? rawTaskProviderSettings.visibleTaskProviders
           : rawTaskProviderSettings.visibleTaskProviders.includes('jira')
             ? rawTaskProviderSettings.visibleTaskProviders
             : [...rawTaskProviderSettings.visibleTaskProviders, 'jira' as const]
+        const visibleTaskProvidersDefaultedForObsidian =
+          parsed.settings?.visibleTaskProvidersDefaultedForObsidian === true
+        const migratedVisibleTaskProviders = visibleTaskProvidersDefaultedForObsidian
+          ? jiraMigratedVisibleTaskProviders
+          : jiraMigratedVisibleTaskProviders.includes('obsidian')
+            ? jiraMigratedVisibleTaskProviders
+            : [...jiraMigratedVisibleTaskProviders, 'obsidian' as const]
         const taskProviderSettings = normalizeTaskProviderSettings({
           visibleTaskProviders: migratedVisibleTaskProviders,
           defaultTaskSource: rawTaskProviderSettings.defaultTaskSource
@@ -3060,7 +3067,7 @@ export class Store {
         if (migratePrimarySelectionPlatformDefault || stampPrimarySelectionTerminalDefaults) {
           this.loadNeedsSave = true
         }
-        if (!visibleTaskProvidersDefaultedForJira) {
+        if (!visibleTaskProvidersDefaultedForJira || !visibleTaskProvidersDefaultedForObsidian) {
           this.loadNeedsSave = true
         }
         const claudeAgentTeamsDefaultDisabledMigrated =
@@ -3204,6 +3211,15 @@ export class Store {
             defaultTaskSource: taskProviderSettings.defaultTaskSource,
             visibleTaskProviders: taskProviderSettings.visibleTaskProviders,
             visibleTaskProvidersDefaultedForJira: true,
+            visibleTaskProvidersDefaultedForObsidian: true,
+            obsidianVault:
+              typeof parsed.settings?.obsidianVault === 'string'
+                ? parsed.settings.obsidianVault
+                : defaults.settings.obsidianVault,
+            obsidianDailyNotesDirectory:
+              typeof parsed.settings?.obsidianDailyNotesDirectory === 'string'
+                ? parsed.settings.obsidianDailyNotesDirectory
+                : defaults.settings.obsidianDailyNotesDirectory,
             terminalShortcutPolicy: normalizeTerminalShortcutPolicy(
               parsed.settings?.terminalShortcutPolicy
             ),
@@ -5312,6 +5328,7 @@ export class Store {
       sanitizedUpdates.visibleTaskProviders = taskProviderSettings.visibleTaskProviders
       if ('visibleTaskProviders' in updates) {
         sanitizedUpdates.visibleTaskProvidersDefaultedForJira = true
+        sanitizedUpdates.visibleTaskProvidersDefaultedForObsidian = true
       }
     }
     if ('autoRenameBranchFromWork' in updates || 'autoRenameBranchFromWorkDefaultedOn' in updates) {

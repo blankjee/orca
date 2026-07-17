@@ -1,9 +1,12 @@
 import type { LinkedWorkItemContext } from '@/lib/linked-work-item-context'
-import type { TaskProvider, TuiAgent, WorkspaceCreateTelemetrySource } from '../../../shared/types'
+import type { TuiAgent, WorkspaceCreateTelemetrySource } from '../../../shared/types'
 import type { LaunchSource } from '../../../shared/telemetry-events'
+import type { WorkspaceIntentWorkItem } from '../../../shared/workspace-name'
 
 export type LaunchableWorkItem = {
-  provider?: TaskProvider
+  // Why: local shortcut sources such as Obsidian do not represent work items
+  // and must never enter workspace-creation flows.
+  provider?: WorkspaceIntentWorkItem['provider']
   title: string
   url: string
   type: 'issue' | 'pr' | 'mr'

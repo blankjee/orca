@@ -161,7 +161,8 @@
             "36761d9604": "不明なキーバインド 操作「{{value0}}」は無視されました。",
             "d2e43e426a": "{{value0}} はオブジェクトでなければなりません。",
             "fb290366b2": "ウェブでは利用できません。",
-            "76122208ca": "「{{value0}}」のショートカットは無視されました: {{value1}}"
+            "76122208ca": "「{{value0}}」のショートカットは無視されました: {{value1}}",
+            "obsidianDesktopOnly": "Local Obsidian daily notes are only available in the desktop app."
           }
         },
         "runtime": {
@@ -1753,7 +1754,8 @@
         "jiraSortAscending": "昇順",
         "jiraSortDescending": "降順",
         "jiraSortBy": "並べ替え",
-        "jiraToggleSortDirection": "{{value0}}に並べ替え"
+        "jiraToggleSortDirection": "{{value0}}に並べ替え",
+        "obsidianSource": "Obsidian"
       },
       "Terminal": {
         "73768427cf": "閉じる",
@@ -3926,7 +3928,8 @@
           "196c1b5362": "GitLab タスクを開く",
           "0ccba862b8": "GitHub タスクを開く",
           "fee535205b": "タスク",
-          "d599269755": "サイドバーから隠す"
+          "d599269755": "サイドバーから隠す",
+          "openObsidianDailyNote": "Open Obsidian daily note"
         },
         "SidebarRepositoryFilterSection": {
           "d3a9c4cea1": "クリア",
@@ -6652,7 +6655,18 @@
           "dd67a1b6e1": "タスクのソース ピッカーとサイドバーのショートカットに GitLab を表示します。",
           "7c5d7fdc20": "GitLab",
           "1db47236cd": "タスクのソース ピッカーとサイドバーのショートカットに GitHub を表示します。",
-          "e14063e727": "GitHub"
+          "e14063e727": "GitHub",
+          "obsidianLabel": "Obsidian",
+          "obsidianDescription": "Show a shortcut to the local Obsidian Daily notes plugin.",
+          "obsidianDailyNotesTitle": "Obsidian daily notes",
+          "obsidianDailyNotesDescription": "Choose the local vault opened from the Obsidian task source.",
+          "obsidianVaultLabel": "Vault name or ID",
+          "obsidianVaultDescription": "Optional. Obsidian still controls the daily-note folder, date format, and template.",
+          "obsidianVaultPlaceholder": "e.g. Work Notes or a vault ID",
+          "obsidianDirectoryLabel": "Daily notes directory",
+          "obsidianDirectoryDescription": "Orca reads and updates today’s Markdown checklists from this local directory.",
+          "obsidianDirectoryPlaceholder": "Choose the folder containing daily notes",
+          "chooseDirectory": "Choose"
         },
         "TerminalAppearanceSection": {
           "a14a427ae4": "ペイン分割線の太さ。",
@@ -12842,7 +12856,9 @@
       "taskSourceContextSummary": {
         "sourceUnavailable": "{{value0}} source unavailable: {{value1}}",
         "someSourceHostsUnavailable": "Some {{value0}} source hosts unavailable: {{value1}}",
-        "reconnectOrUpdateTitle": "Reconnect or update {{value0}} to load this source."
+        "reconnectOrUpdateTitle": "Reconnect or update {{value0}} to load this source.",
+        "activeVault": "Active vault",
+        "obsidianTitle": "{{value0}} daily notes · Vault: {{value1}}"
       },
       "ShortcutKeyCombo": {
         "07eb4985a1": "Double-tap {{value0}}"
@@ -13080,6 +13096,55 @@
           "undo": "元に戻す",
           "widthOption": "{{value0}} px"
         }
+      },
+      "ObsidianDailyNotePanel": {
+        "saveVaultFailed": "Failed to save the Obsidian vault.",
+        "openFailed": "Could not open Obsidian. Check that it is installed and its URI handler is enabled.",
+        "title": "Open today's Obsidian daily note",
+        "description": "Obsidian uses the folder, date format, and template configured in its Daily notes core plugin.",
+        "vaultLabel": "Vault name or ID",
+        "vaultDescription": "Optional. Set a vault to make the daily-note target deterministic.",
+        "vaultPlaceholder": "e.g. Work Notes or a vault ID",
+        "openAction": "Open today's daily note"
+      },
+      "ObsidianDailyTodoPanel": {
+        "openFailed": "Could not open Obsidian. Check that it is installed.",
+        "title": "Today's Todo",
+        "notConfigured": "Not configured",
+        "refresh": "Refresh",
+        "openObsidian": "Open Obsidian",
+        "addPlaceholder": "Add a task to today",
+        "add": "Add",
+        "emptyTitle": "No Markdown todos in today’s note",
+        "emptyDescription": "Add one above or use a checklist like “- [ ] Task” in Obsidian.",
+        "chooseTitle": "Choose your Daily notes folder",
+        "chooseDescription": "Orca will read and update today’s Markdown checklist directly. Nested year/month folders are supported.",
+        "chooseFolder": "Choose folder",
+        "retry": "Retry",
+        "total": "Total",
+        "pending": "Pending",
+        "inProgress": "In progress",
+        "completed": "Completed",
+        "noteNotFound": "Today’s daily note was not found in this folder.",
+        "directoryUnavailable": "The Daily notes folder is unavailable.",
+        "todoConflict": "This todo changed in another app. Refresh and try again.",
+        "accessFailed": "Orca could not read or update today’s daily note.",
+        "priority": "Priority",
+        "priorityP1": "P1",
+        "priorityP2": "P2",
+        "priorityP3": "P3",
+        "todayNotFound": "Today’s daily note was not found in this vault.",
+        "historyAvailable": "Choose any discovered daily note from the date menu above."
+      },
+      "ObsidianDailyTodoList": {
+        "noPriority": "No priority",
+        "advanceStatus": "Advance todo status",
+        "statusCycleHint": "Pending → In progress → Completed"
+      },
+      "ObsidianDailyNotePicker": {
+        "label": "Select a daily note",
+        "todayMissing": "Today · not found",
+        "count": "{{value0}} notes"
       }
     },
     "i18n": {

@@ -45,6 +45,7 @@ import { registerKeybindingHandlers } from './keybindings'
 import { registerTelemetryHandlers } from './telemetry'
 import { registerBrowserHandlers } from './browser'
 import { registerShellHandlers } from './shell'
+import { registerObsidianDailyTodoHandlers } from './obsidian-daily-todos'
 import { registerPetHandlers } from './pet'
 import { registerUIHandlers, setTrustedUIRendererWebContentsId } from './ui'
 import { registerEmulatorFrameStreamHandlers } from './emulator-frame-stream'
@@ -169,6 +170,7 @@ export function registerCoreHandlers(
   })
   registerBrowserHandlers()
   registerShellHandlers()
+  registerObsidianDailyTodoHandlers()
   registerPetHandlers()
   registerSessionHandlers(store)
   registerUIHandlers(store)

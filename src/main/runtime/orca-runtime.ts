@@ -880,6 +880,7 @@ type RuntimeStore = {
     defaultTaskSource?: GlobalSettings['defaultTaskSource']
     defaultTaskViewPreset?: GlobalSettings['defaultTaskViewPreset']
     visibleTaskProviders?: GlobalSettings['visibleTaskProviders']
+    obsidianVault?: GlobalSettings['obsidianVault']
     defaultRepoSelection?: GlobalSettings['defaultRepoSelection']
     defaultLinearTeamSelection?: GlobalSettings['defaultLinearTeamSelection']
     githubProjects?: GlobalSettings['githubProjects']
@@ -2720,6 +2721,7 @@ export class OrcaRuntimeService {
     | 'defaultTaskSource'
     | 'defaultTaskViewPreset'
     | 'visibleTaskProviders'
+    | 'obsidianVault'
     | 'defaultRepoSelection'
     | 'defaultLinearTeamSelection'
     | 'githubProjects'
@@ -2743,6 +2745,7 @@ export class OrcaRuntimeService {
       defaultTaskSource: settings.defaultTaskSource ?? 'github',
       defaultTaskViewPreset: settings.defaultTaskViewPreset ?? 'issues',
       visibleTaskProviders: settings.visibleTaskProviders ?? [...TASK_PROVIDERS],
+      obsidianVault: settings.obsidianVault ?? '',
       defaultRepoSelection: settings.defaultRepoSelection ?? null,
       defaultLinearTeamSelection: settings.defaultLinearTeamSelection ?? null,
       githubProjects: settings.githubProjects,
@@ -2765,6 +2768,7 @@ export class OrcaRuntimeService {
       | 'defaultTaskSource'
       | 'defaultTaskViewPreset'
       | 'visibleTaskProviders'
+      | 'obsidianVault'
       | 'defaultRepoSelection'
       | 'defaultLinearTeamSelection'
       | 'githubProjects'
@@ -2785,6 +2789,7 @@ export class OrcaRuntimeService {
     | 'defaultTaskSource'
     | 'defaultTaskViewPreset'
     | 'visibleTaskProviders'
+    | 'obsidianVault'
     | 'defaultRepoSelection'
     | 'defaultLinearTeamSelection'
     | 'githubProjects'

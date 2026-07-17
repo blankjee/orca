@@ -1,5 +1,5 @@
 import React from 'react'
-import { EyeOff, Github, Gitlab, List } from 'lucide-react'
+import { EyeOff, Github, Gitlab, List, NotebookPen } from 'lucide-react'
 import { JiraIcon } from '@/components/icons/JiraIcon'
 import { LinearIcon } from '@/components/icons/LinearIcon'
 import {
@@ -116,6 +116,7 @@ export function SidebarTaskNavButton(): React.JSX.Element | null {
     () => resolveVisibleTaskProvider(defaultTaskSource, visibleTaskProviders),
     [defaultTaskSource, visibleTaskProviders]
   )
+  const canOpenTasks = canBrowseTasks || visibleTaskProviders.includes('obsidian')
 
   React.useEffect(() => {
     if (!preflightStatusChecked || !preflightStatusCurrent) {
@@ -173,14 +174,14 @@ export function SidebarTaskNavButton(): React.JSX.Element | null {
         <button
           type="button"
           onClick={() => {
-            if (!canBrowseTasks) {
+            if (!canOpenTasks) {
               return
             }
-            openTaskPage()
+            openTaskPage(canBrowseTasks ? undefined : { taskSource: 'obsidian' })
           }}
           onPointerEnter={handlePrefetch}
           onFocus={handlePrefetch}
-          aria-disabled={!canBrowseTasks}
+          aria-disabled={!canOpenTasks}
           aria-current={tasksActive ? 'page' : undefined}
           data-contextual-tour-target="sidebar-tasks"
           className={cn(
@@ -188,7 +189,7 @@ export function SidebarTaskNavButton(): React.JSX.Element | null {
             tasksActive
               ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
               : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8',
-            !canBrowseTasks && 'cursor-not-allowed opacity-50 hover:bg-transparent'
+            !canOpenTasks && 'cursor-not-allowed opacity-50 hover:bg-transparent'
           )}
         >
           <List
@@ -245,6 +246,18 @@ export function SidebarTaskNavButton(): React.JSX.Element | null {
                 onOpen={() => openTaskPage({ taskSource: 'jira' })}
               >
                 <JiraIcon className="size-3.5" />
+              </TaskProviderShortcut>
+            ) : null}
+            {visibleTaskProviders.includes('obsidian') ? (
+              <TaskProviderShortcut
+                canBrowseTasks
+                label={translate(
+                  'auto.components.sidebar.SidebarNav.openObsidianDailyNote',
+                  'Open Obsidian daily note'
+                )}
+                onOpen={() => openTaskPage({ taskSource: 'obsidian' })}
+              >
+                <NotebookPen className="size-3.5" aria-hidden />
               </TaskProviderShortcut>
             ) : null}
           </span>

@@ -5,6 +5,11 @@ import type { ExecutionHostHealth } from '../../../shared/execution-host-registr
 import type { SshConnectionStatus } from '../../../shared/ssh-types'
 import type { TaskProvider } from '../../../shared/types'
 import type { TaskProviderIdentity, TaskSourceContext } from '../../../shared/task-source-context'
+import {
+  formatTaskSourceLongList as formatLongList,
+  formatTaskSourceShortList as formatShortList,
+  getTaskSourceSshStatusLabel as getSshStatusLabel
+} from './task-source-context-labels'
 
 export type TaskSourceContextSummary = {
   label: string
@@ -45,6 +50,7 @@ export function getTaskSourceContextSummary(args: {
   selectedRepoCount?: number
   linearWorkspaceName?: string | null
   jiraSiteName?: string | null
+  obsidianVault?: string | null
 }): TaskSourceContextSummary {
   switch (args.provider) {
     case 'github':
@@ -64,6 +70,19 @@ export function getTaskSourceContextSummary(args: {
         hostLabelById: args.hostLabelById,
         hostAvailability: args.hostAvailability
       })
+    case 'obsidian': {
+      const vault =
+        args.obsidianVault?.trim() ||
+        translate('auto.components.taskSourceContextSummary.activeVault', 'Active vault')
+      return {
+        label: `${args.providerLabel} · ${vault}`,
+        title: translate(
+          'auto.components.taskSourceContextSummary.obsidianTitle',
+          '{{value0}} daily notes · Vault: {{value1}}',
+          { value0: args.providerLabel, value1: vault }
+        )
+      }
+    }
   }
 }
 
@@ -284,33 +303,4 @@ function getAvailabilityLabel(
     return unavailableHosts[0].statusLabel
   }
   return `${unavailableHosts.length} unavailable`
-}
-
-function getSshStatusLabel(status: SshConnectionStatus): string {
-  switch (status) {
-    case 'connected':
-      return 'connected'
-    case 'connecting':
-    case 'deploying-relay':
-    case 'reconnecting':
-      return 'connecting'
-    case 'auth-failed':
-      return 'auth needed'
-    case 'reconnection-failed':
-    case 'error':
-      return 'connection issue'
-    case 'disconnected':
-      return 'disconnected'
-  }
-}
-
-function formatShortList(labels: readonly string[]): string {
-  if (labels.length <= 2) {
-    return labels.join(', ')
-  }
-  return `${labels[0]} +${labels.length - 1}`
-}
-
-function formatLongList(labels: readonly string[]): string {
-  return labels.join(', ')
 }

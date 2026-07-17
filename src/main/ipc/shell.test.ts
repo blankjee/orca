@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url'
 const {
   getSpawnArgsForWindowsMock,
   handleMock,
+  openExternalMock,
   openPathMock,
   resolveCliCommandMock,
   showItemInFolderMock,
@@ -14,6 +15,7 @@ const {
 } = vi.hoisted(() => ({
   getSpawnArgsForWindowsMock: vi.fn(),
   handleMock: vi.fn(),
+  openExternalMock: vi.fn(),
   openPathMock: vi.fn(),
   resolveCliCommandMock: vi.fn(),
   showItemInFolderMock: vi.fn(),
@@ -28,7 +30,7 @@ vi.mock('electron', () => ({
   },
   shell: {
     showItemInFolder: showItemInFolderMock,
-    openExternal: vi.fn(),
+    openExternal: openExternalMock,
     openPath: openPathMock
   },
   dialog: {
@@ -82,6 +84,7 @@ describe('registerShellHandlers', () => {
   beforeEach(() => {
     handleMock.mockReset()
     getSpawnArgsForWindowsMock.mockReset()
+    openExternalMock.mockReset()
     openPathMock.mockReset()
     resolveCliCommandMock.mockReset()
     showItemInFolderMock.mockReset()
@@ -106,6 +109,36 @@ describe('registerShellHandlers', () => {
     }
     return call[1] as (event: unknown, ...args: unknown[]) => Promise<unknown>
   }
+
+  describe('shell:openUrl', () => {
+    it('opens the narrowly allowed Obsidian daily-note action', async () => {
+      const handler = getHandler('shell:openUrl')
+
+      await handler({}, 'obsidian://daily?vault=Work%20%2F%20Notes')
+      expect(openExternalMock).toHaveBeenCalledWith('obsidian://daily?vault=Work%20%2F%20Notes')
+    })
+
+    it('opens a narrowly allowed Obsidian vault-relative note', async () => {
+      const handler = getHandler('shell:openUrl')
+
+      await handler({}, 'obsidian://open?vault=Work&file=Daily%2F2026-07-15')
+      expect(openExternalMock).toHaveBeenCalledWith(
+        'obsidian://open?vault=Work&file=Daily%2F2026-07-15'
+      )
+    })
+
+    it('rejects other custom-protocol actions', async () => {
+      const handler = getHandler('shell:openUrl')
+
+      await handler({}, 'obsidian://open?vault=Work')
+      await handler({}, 'obsidian://open?file=Daily&file=Unexpected')
+      await handler({}, 'obsidian://daily?vault=Work&vault=Unexpected')
+      await handler({}, 'obsidian://open?file=Daily&x-success=untrusted%3A%2F%2Fcallback')
+      await handler({}, 'obsidian://daily?x-success=untrusted%3A%2F%2Fcallback')
+      await handler({}, 'vscode://file/tmp/note.md')
+      expect(openExternalMock).not.toHaveBeenCalled()
+    })
+  })
 
   it('picks audio files with a constrained native dialog filter', async () => {
     showOpenDialogMock.mockResolvedValue({
