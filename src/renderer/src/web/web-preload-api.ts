@@ -724,7 +724,6 @@ function createWebPreloadApi(): Partial<PreloadApi> {
     agentHooks: createAgentHooksApi(),
     developerPermissions: createDeveloperPermissionsApi(),
     computerUsePermissions: createComputerUsePermissionsApi(),
-    updater: createUpdaterApi(),
     shell: createShellApi(),
     obsidianDailyTodos: createObsidianDailyTodosApi(),
     skills: createSkillsApi(),
@@ -2747,19 +2746,6 @@ function createAccountsApi(): never {
   } as never
 }
 
-function createUpdaterApi(): NonNullable<Partial<PreloadApi>['updater']> {
-  return {
-    getVersion: () => Promise.resolve('web'),
-    getStatus: () => Promise.resolve({ state: 'idle' } as never),
-    check: () => Promise.resolve(),
-    download: () => Promise.resolve(),
-    quitAndInstall: () => Promise.resolve(),
-    dismissNudge: () => Promise.resolve(),
-    onStatus: () => noopUnsubscribe,
-    onClearDismissal: () => noopUnsubscribe
-  }
-}
-
 function createShellApi(): NonNullable<Partial<PreloadApi>['shell']> {
   const openResult = { ok: true } as const
   return {
@@ -2800,7 +2786,9 @@ function createObsidianDailyTodosApi(): NonNullable<Partial<PreloadApi>['obsidia
   return {
     load: () => Promise.resolve(unavailable),
     setStatus: () => Promise.resolve(unavailable),
-    add: () => Promise.resolve(unavailable)
+    add: () => Promise.resolve(unavailable),
+    updateText: () => Promise.resolve(unavailable),
+    saveWorkRecord: () => Promise.resolve(unavailable)
   }
 }
 

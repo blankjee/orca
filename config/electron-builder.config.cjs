@@ -9,7 +9,8 @@ const {
 const {
   createPackagedRuntimeNodeModuleResources,
   prunePackagedRuntimeNodeModules,
-  verifyPackagedMainRuntimeDeps
+  verifyPackagedMainRuntimeDeps,
+  verifyPackagedRuntimePackageFiles
 } = require('./packaged-runtime-node-modules.cjs')
 
 const isMacRelease = process.env.ORCA_MAC_RELEASE === '1'
@@ -53,6 +54,9 @@ module.exports = {
     buildResources: 'resources/build'
   },
   files: [
+    // Why: out/ is gitignored, and electron-builder's default matcher can omit
+    // the renderer tree even after a successful production build.
+    { from: 'out/renderer', to: 'out/renderer', filter: ['**/*'] },
     '!**/.vscode/*',
     // Why: these repo-only inputs are either bundled into out/ or copied via
     // extraResources. Shipping them in app.asar bloats the desktop bundle.
@@ -140,6 +144,7 @@ module.exports = {
       return
     }
     prunePackagedRuntimeNodeModules(resourcesDir, context.electronPlatformName, context.arch)
+    verifyPackagedRuntimePackageFiles(resourcesDir)
     verifyPackagedMainRuntimeDeps(resourcesDir)
     // Why: boot the packaged daemon-entry under plain Node, but only for the
     // slice matching the packaging host's arch — daemon-entry.js is JS, yet it

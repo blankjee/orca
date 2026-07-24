@@ -53,8 +53,6 @@ import {
   registerAppMenu,
   rebuildAppMenu
 } from './menu/register-app-menu'
-import { checkForUpdatesFromMenu, isQuittingForUpdate } from './updater'
-import { recordUpdaterLifecycle } from './updater-lifecycle-diagnostics'
 import {
   configureElectronNetworkCompatibility,
   configureDevUserDataPath,
@@ -113,10 +111,7 @@ import { RateLimitService } from './rate-limits/service'
 import { readMiniMaxSessionCookie } from './minimax/minimax-cookie-store'
 import { getInitialClaudeRateLimitTarget } from './rate-limits/claude-rate-limit-target'
 import { getInitialCodexRateLimitTarget } from './rate-limits/codex-rate-limit-target'
-import {
-  attachMainWindowServices,
-  ensureAutoUpdaterConfigured
-} from './window/attach-main-window-services'
+import { attachMainWindowServices } from './window/attach-main-window-services'
 import { createMainWindow, loadMainWindow } from './window/createMainWindow'
 import { createSystemTray, destroySystemTray, setTrayAttention } from './tray/system-tray'
 import { focusExistingMainWindow } from './window/focus-existing-window'
@@ -261,10 +256,7 @@ const isServeMode = process.argv.includes('--serve')
 const desktopActivationGate = createServeDesktopActivationGate({
   initialState: isServeMode ? 'initializing' : 'ready',
   activateWindow: () => {
-    // Why: an updater replacement must not resurrect the old app bundle.
-    if (!isQuittingForUpdate()) {
-      focusExistingWindow()
-    }
+    focusExistingWindow()
   },
   onBlocked: (reason) => console.error(`[serve] Desktop activation blocked: ${reason}`)
 })
@@ -545,7 +537,7 @@ function clearExpectedRendererReload(webContentsId?: number): void {
 }
 
 function getExpectedTeardownScope(webContentsId?: number): ExpectedTeardownScope {
-  if (isQuitting || isQuittingForUpdate()) {
+  if (isQuitting) {
     return 'app-shutdown'
   }
   if (webContentsId === undefined) {
@@ -774,7 +766,7 @@ function prepareCodexRuntimeHomeForLaunch(target?: CodexAccountSelectionTarget):
 
 // Why: tray "Open Orca" / left-click restores the window the close handler may
 // have hidden to the tray; if the window was fully torn down, reopen it the
-// same way macOS dock re-activation does (guarded against update relaunch).
+// same way macOS dock re-activation does.
 function showMainWindowFromTray(): void {
   if (mainWindow && !mainWindow.isDestroyed()) {
     if (mainWindow.isMinimized()) {
@@ -784,9 +776,7 @@ function showMainWindowFromTray(): void {
     mainWindow.focus()
     return
   }
-  if (!isQuittingForUpdate()) {
-    openMainWindow()
-  }
+  openMainWindow()
 }
 
 function openMainWindow(): BrowserWindow {
@@ -1009,9 +999,7 @@ function openMainWindow(): BrowserWindow {
       },
       // Why: let the PTY layer skip its orphan sweep on the one recovery reload
       // that re-fires did-finish-load, so live local sessions survive it (#5787).
-      isRecoveryReloadInFlight,
-      onBeforeUpdateQuit: () =>
-        preserveAgentAuthBeforeRestart({ codexRuntimeHome, claudeRuntimeAuth, store })
+      isRecoveryReloadInFlight
     }
   )
   rateLimits.attach(window)
@@ -2002,12 +1990,6 @@ app.whenReady().then(async () => {
   logStartupMilestone('i18n-ready')
 
   registerAppMenu({
-    onCheckForUpdates: (options) => {
-      // Why: the menu is clickable before first paint; a manual check must
-      // run against a configured updater (see attach-main-window-services).
-      ensureAutoUpdaterConfigured()
-      return checkForUpdatesFromMenu(options)
-    },
     onBeforeReload: ({ ignoreCache, webContentsId }) => {
       if (mainWindow?.webContents.id === webContentsId) {
         markExpectedRendererReload(webContentsId)
@@ -2276,11 +2258,6 @@ app.whenReady().then(async () => {
 })
 
 app.on('before-quit', () => {
-  if (isQuittingForUpdate()) {
-    recordUpdaterLifecycle('before_quit_allowed', undefined, {
-      message: 'before-quit allowed for update install'
-    })
-  }
   isQuitting = true
   desktopRelayService?.fenceAndCloseNow()
   runtimeRpc?.setMobileRelayPairingProvider(null)
@@ -2304,14 +2281,6 @@ app.on('before-quit', () => {
 // async work and let Electron exit.
 let daemonDisconnectDone = false
 app.on('will-quit', (e) => {
-  const updateQuitInProgress = isQuittingForUpdate()
-  if (updateQuitInProgress) {
-    recordUpdaterLifecycle(
-      'will_quit_cleanup_started',
-      { daemonTeardown: 'disconnect' },
-      { message: 'will-quit cleanup for update install; daemonTeardown=disconnect' }
-    )
-  }
   // Why: before-quit can still be aborted by renderer beforeunload; wait until
   // the committed quit path before removing the Windows notification icon.
   destroySystemTray()
@@ -2357,7 +2326,7 @@ app.on('will-quit', (e) => {
     // after app.quit() below; without this guard, the second pass would
     // re-invoke runtimeRpc.stop() (redundant rmSync on an already-removed
     // socket) and re-run the ownership-guarded clear against a metadata file
-    // that may now belong to the auto-updater's replacement process.
+    // that may now belong to another replacement process.
     const rpcStopAndClear = runtimeRpc
       ? runtimeRpc
           .stop()

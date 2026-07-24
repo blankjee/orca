@@ -59,7 +59,6 @@ import { registerAgentTrustHandlers } from './agent-trust'
 import { registerClaudeAccountHandlers } from './claude-accounts'
 import { registerMiniMaxCredentialsHandlers } from './minimax-credentials'
 import { registerGrokAccountHandlers } from './grok-accounts'
-import { registerUpdaterHandlers } from '../window/attach-main-window-services'
 import {
   registerClipboardHandlers,
   setTrustedClipboardRendererWebContentsId
@@ -197,6 +196,5 @@ export function registerCoreHandlers(
   })
   registerNativeChatHandlers()
   registerClipboardHandlers(store)
-  registerUpdaterHandlers(store)
   registerSpeechHandlers(store)
 }

@@ -507,8 +507,6 @@ export function getDefaultUIState(): PersistedUIState {
     statusBarItems: [...DEFAULT_STATUS_BAR_ITEMS],
     statusBarVisible: true,
     usagePercentageDisplay: DEFAULT_USAGE_PERCENTAGE_DISPLAY,
-    dismissedUpdateVersion: null,
-    lastUpdateCheckAt: null,
     trustedOrcaHooks: {},
     setupScriptPromptDismissedRepoIds: [],
     acknowledgedAgentsByPaneKey: {},

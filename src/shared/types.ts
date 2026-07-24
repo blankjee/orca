@@ -2219,51 +2219,6 @@ export type WorktreeRemoteBranchConflictEvent = {
   branchName: string
 }
 
-// ─── Updater ─────────────────────────────────────────────────────────
-
-// Why: the release object sent to the renderer omits `version` (redundant
-// with the top-level UpdateStatus.version) to keep one source of truth.
-export type ChangelogRelease = {
-  title: string
-  description: string
-  mediaUrl?: string
-  releaseNotesUrl: string
-}
-
-export type ChangelogData = {
-  release: ChangelogRelease
-  releasesBehind: number | null
-}
-
-export type UpdateCheckOptions = {
-  includePrerelease?: boolean
-  includePerfPrerelease?: boolean
-}
-
-export type UpdateStatus =
-  | { state: 'idle' }
-  | { state: 'checking'; userInitiated?: boolean }
-  | {
-      state: 'available'
-      version: string
-      activeNudgeId?: string
-      // Why: releaseUrl is not currently populated by the update-available handler
-      // (it always sends undefined). Kept on the type for the Settings page's
-      // release-notes link fallback and for potential future use if the main
-      // process starts extracting release URLs from electron-updater metadata.
-      releaseUrl?: string
-      // Why: changelog is always explicitly set by the main process — null means
-      // the fetch failed or the version wasn't in the JSON (simple mode), and a
-      // populated object means rich mode. Using `| null` (not `?`) avoids a
-      // three-state ambiguity (undefined vs null vs present) and makes exhaustive
-      // checks straightforward.
-      changelog: ChangelogData | null
-    }
-  | { state: 'not-available'; userInitiated?: boolean }
-  | { state: 'downloading'; percent: number; version: string; activeNudgeId?: string }
-  | { state: 'downloaded'; version: string; releaseUrl?: string; activeNudgeId?: string }
-  | { state: 'error'; message: string; userInitiated?: boolean; activeNudgeId?: string }
-
 // ─── Settings ────────────────────────────────────────────────────────
 export type NotificationSettings = {
   enabled: boolean
@@ -3371,17 +3326,10 @@ export type PersistedUIState = {
   statusBarVisible: boolean
   /** Why: this is client-side presentation, not a provider/account or execution-host setting. */
   usagePercentageDisplay?: UsagePercentageDisplay
-  dismissedUpdateVersion: string | null
-  lastUpdateCheckAt: number | null
-  pendingUpdateNudgeId?: string | null
-  dismissedUpdateNudgeId?: string | null
   /** Whether Orca has already attempted to trigger the macOS notification
    *  permission dialog via a startup notification. Prevents re-firing on
    *  every launch. */
   notificationPermissionRequested?: boolean
-  /** Once the user has seen the "your sessions won't be interrupted"
-   *  reassurance card, we never show it again. */
-  updateReassuranceSeen?: boolean
   /** Per-paneKey "user has visited this row" timestamps, used by the inline
    *  agents list to mute rows the user has already seen. Persisted because
    *  agent rows themselves now survive restart; without persisting acks too,

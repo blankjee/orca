@@ -220,12 +220,7 @@ export const UiUpdate = z
     _grokStatusBarDefaultAdded: z.boolean().optional(),
     statusBarVisible: z.boolean().optional(),
     usagePercentageDisplay: z.enum(['used', 'remaining']).optional(),
-    dismissedUpdateVersion: NullableString.optional(),
-    lastUpdateCheckAt: z.number().finite().nullable().optional(),
-    pendingUpdateNudgeId: NullableString.optional(),
-    dismissedUpdateNudgeId: NullableString.optional(),
     notificationPermissionRequested: z.boolean().optional(),
-    updateReassuranceSeen: z.boolean().optional(),
     acknowledgedAgentsByPaneKey: z.record(z.string(), z.number().finite()).optional(),
     browserDefaultUrl: NullableString.optional(),
     browserDefaultSearchEngine: z

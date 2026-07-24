@@ -16,12 +16,6 @@ cask "orca" do
     strategy :github_latest
   end
 
-  # Why: electron-updater (src/main/updater.ts) handles in-place updates by
-  # writing a new Orca.app into /Applications. Marking the cask auto_updates
-  # tells Homebrew not to compete with the in-app updater — `brew upgrade`
-  # becomes a no-op unless the user passes --greedy, and brew's version
-  # metadata stays aligned with whatever the app has swapped itself to.
-  auto_updates true
   conflicts_with cask: "orca@rc"
   depends_on macos: :big_sur
 

@@ -17,7 +17,6 @@ const PACKAGED_RUNTIME_PACKAGE_ROOTS = [
   '@electron-toolkit/utils',
   '@linear/sdk',
   '@parcel/watcher',
-  'electron-updater',
   'i18next',
   'jsonc-parser',
   'node-pty',
@@ -44,6 +43,18 @@ const PARCEL_WATCHER_PLATFORM_PREFIX_BY_PLATFORM = {
   win32: 'watcher-win32'
 }
 const TYPE_DECLARATION_ARTIFACT_RE = /\.d\.(?:c|m)?ts(?:\.map)?$/
+const PACKAGED_RUNTIME_RESOURCE_FILTER = [
+  '**/*',
+  '!**/*.d.ts',
+  '!**/*.d.ts.map',
+  '!**/*.d.cts',
+  '!**/*.d.cts.map',
+  '!**/*.d.mts',
+  '!**/*.d.mts.map'
+]
+const PACKAGED_RUNTIME_REQUIRED_FILES = new Map([
+  ['qrcode', ['package.json', 'lib/index.js', 'lib/core/qrcode.js']]
+])
 const VERSIONED_ONNXRUNTIME_DYLIB_RE = /^libonnxruntime\.\d[\d.]*\.dylib$/
 
 const NODE_BUILTINS = new Set([
@@ -186,8 +197,26 @@ function collectPackagedRuntimePackages() {
 function createPackagedRuntimeNodeModuleResources() {
   return collectPackagedRuntimePackages().map(([packageName, packageDir]) => ({
     from: packageDir,
-    to: join('node_modules', ...packageName.split('/'))
+    to: join('node_modules', ...packageName.split('/')),
+    // Why: runtime declarations are pruned after packaging anyway; excluding
+    // them up front also avoids macOS copy failures on declaration-only files.
+    filter: PACKAGED_RUNTIME_RESOURCE_FILTER
   }))
+}
+
+function verifyPackagedRuntimePackageFiles(resourcesDir) {
+  const missing = []
+  for (const [packageName, relativePaths] of PACKAGED_RUNTIME_REQUIRED_FILES) {
+    const packageDir = join(resourcesDir, 'node_modules', ...packageName.split('/'))
+    for (const relativePath of relativePaths) {
+      if (!existsSync(join(packageDir, ...relativePath.split('/')))) {
+        missing.push(`${packageName}/${relativePath}`)
+      }
+    }
+  }
+  if (missing.length > 0) {
+    throw new Error(`Packaged runtime dependencies are incomplete: ${missing.join(', ')}`)
+  }
 }
 
 function normalizeAsarEntryPath(entry) {
@@ -419,5 +448,6 @@ module.exports = {
   prunePackagedSherpaOnnx,
   prunePackagedRuntimeTypeDeclarations,
   prunePackagedZodSources,
-  verifyPackagedMainRuntimeDeps
+  verifyPackagedMainRuntimeDeps,
+  verifyPackagedRuntimePackageFiles
 }

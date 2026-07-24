@@ -136,7 +136,7 @@ export class StatsCollector {
    * Idempotent shutdown — closes out live agents and writes to disk.
    *
    * Why idempotent: Electron's before-quit can fire multiple times — the
-   * updater handler calls event.preventDefault() to defer macOS installs.
+   * a quit handler calls event.preventDefault() to finish asynchronous cleanup.
    * We close live agents and write, but do NOT clear in-memory state so
    * a second flush() after resumed activity works correctly.
    */
