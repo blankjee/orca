@@ -17,8 +17,10 @@ import type {
   ObsidianDailyTodoSnapshot,
   ObsidianDailyTodoStatus
 } from '../../../shared/obsidian-daily-todo'
+import type { ObsidianDailyTodoCandidate } from '../../../shared/obsidian-daily-todo-candidate'
 import { ObsidianDailyDateHeader } from './obsidian-daily-date-header'
 import { formatObsidianDailyDateShort } from './obsidian-daily-date-navigation'
+import { ObsidianDailyTodoCandidatePanel } from './obsidian-daily-todo-candidate-panel'
 import { ObsidianDailyTodoList } from './obsidian-daily-todo-list'
 import { ObsidianDailyTodoOverviewPanel } from './obsidian-daily-todo-overview'
 import type {
@@ -42,6 +44,11 @@ type ObsidianDailyTodoPanelContentProps = {
   busyTodoIds: ReadonlySet<string>
   draft: string
   priority: TodoPriority
+  candidateSourceText: string
+  candidateAnalyzing: boolean
+  candidateBusyIds: ReadonlySet<string>
+  candidateErrorMessage: string | null
+  candidates: readonly ObsidianDailyTodoCandidate[]
   onChooseDirectory: () => void
   onRefresh: () => void
   onOpen: () => void
@@ -51,6 +58,13 @@ type ObsidianDailyTodoPanelContentProps = {
   onDraftChange: (value: string) => void
   onPriorityChange: (priority: TodoPriority) => void
   onAdd: () => void
+  onCandidateSourceTextChange: (value: string) => void
+  onAnalyzeCandidates: () => void
+  onAcceptCandidate: (
+    candidate: ObsidianDailyTodoCandidate,
+    overrides: { title: string; group: string; priority: TodoPriority | null }
+  ) => void
+  onDismissCandidate: (candidate: ObsidianDailyTodoCandidate) => void
   onStatusChange: (todo: ObsidianDailyTodoItem, status: ObsidianDailyTodoStatus) => void
   onTextChange: (todo: ObsidianDailyTodoItem, text: string) => void
   onOpenWorkRecord: (todo: ObsidianDailyTodoItem) => void
@@ -70,6 +84,11 @@ export function ObsidianDailyTodoPanelContent({
   busyTodoIds,
   draft,
   priority,
+  candidateSourceText,
+  candidateAnalyzing,
+  candidateBusyIds,
+  candidateErrorMessage,
+  candidates,
   onChooseDirectory,
   onRefresh,
   onOpen,
@@ -79,6 +98,10 @@ export function ObsidianDailyTodoPanelContent({
   onDraftChange,
   onPriorityChange,
   onAdd,
+  onCandidateSourceTextChange,
+  onAnalyzeCandidates,
+  onAcceptCandidate,
+  onDismissCandidate,
   onStatusChange,
   onTextChange,
   onOpenWorkRecord,
@@ -124,6 +147,19 @@ export function ObsidianDailyTodoPanelContent({
               onDraftChange={onDraftChange}
               onPriorityChange={onPriorityChange}
               onAdd={onAdd}
+            />
+
+            <ObsidianDailyTodoCandidatePanel
+              candidates={candidates}
+              sourceText={candidateSourceText}
+              analyzing={candidateAnalyzing}
+              busyCandidateIds={candidateBusyIds}
+              disabled={!snapshot?.filePath}
+              errorMessage={candidateErrorMessage}
+              onSourceTextChange={onCandidateSourceTextChange}
+              onAnalyze={onAnalyzeCandidates}
+              onAccept={onAcceptCandidate}
+              onDismiss={onDismissCandidate}
             />
 
             {errorMessage ? (

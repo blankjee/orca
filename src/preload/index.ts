@@ -107,6 +107,16 @@ import type {
 import type { ObsidianDailyTodoTextUpdate } from '../shared/obsidian-daily-todo-text'
 import type { ObsidianDailyWorkRecordSaveInput } from '../shared/obsidian-daily-work-record'
 import type {
+  ObsidianDailyTodoCandidateAcceptInput,
+  ObsidianDailyTodoCandidateAcceptResult,
+  ObsidianDailyTodoCandidateAnalyzeInput,
+  ObsidianDailyTodoCandidateAnalyzeResult,
+  ObsidianDailyTodoCandidateDismissInput,
+  ObsidianDailyTodoCandidateListResult,
+  ObsidianDailyTodoCandidateMutationResult,
+  ObsidianDailyTodoCandidateUpdateInput
+} from '../shared/obsidian-daily-todo-candidate'
+import type {
   AddIssueCommentBySlugArgs,
   ClearProjectItemFieldArgs,
   DeleteIssueCommentBySlugArgs,
@@ -2231,7 +2241,27 @@ const api = {
     updateText: (args: ObsidianDailyTodoTextUpdate): Promise<ObsidianDailyTodoResult> =>
       ipcRenderer.invoke('obsidianDailyTodos:updateText', args),
     saveWorkRecord: (args: ObsidianDailyWorkRecordSaveInput): Promise<ObsidianDailyTodoResult> =>
-      ipcRenderer.invoke('obsidianDailyTodos:saveWorkRecord', args)
+      ipcRenderer.invoke('obsidianDailyTodos:saveWorkRecord', args),
+    candidates: {
+      list: (): Promise<ObsidianDailyTodoCandidateListResult> =>
+        ipcRenderer.invoke('obsidianDailyTodos:candidates:list'),
+      analyzeText: (
+        args: ObsidianDailyTodoCandidateAnalyzeInput
+      ): Promise<ObsidianDailyTodoCandidateAnalyzeResult> =>
+        ipcRenderer.invoke('obsidianDailyTodos:candidates:analyzeText', args),
+      update: (
+        args: ObsidianDailyTodoCandidateUpdateInput
+      ): Promise<ObsidianDailyTodoCandidateMutationResult> =>
+        ipcRenderer.invoke('obsidianDailyTodos:candidates:update', args),
+      accept: (
+        args: ObsidianDailyTodoCandidateAcceptInput
+      ): Promise<ObsidianDailyTodoCandidateAcceptResult> =>
+        ipcRenderer.invoke('obsidianDailyTodos:candidates:accept', args),
+      dismiss: (
+        args: ObsidianDailyTodoCandidateDismissInput
+      ): Promise<ObsidianDailyTodoCandidateMutationResult> =>
+        ipcRenderer.invoke('obsidianDailyTodos:candidates:dismiss', args)
+    }
   },
 
   skills: {

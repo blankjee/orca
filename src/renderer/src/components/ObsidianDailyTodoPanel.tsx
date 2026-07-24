@@ -15,6 +15,7 @@ import type {
 import { ObsidianDailyTodoPanelContent } from './obsidian-daily-todo-panel-content'
 import { ObsidianDailyWorkRecordSheet } from './obsidian-daily-work-record-sheet'
 import { ObsidianTodoAgentLaunchDialog } from './ObsidianTodoAgentLaunchDialog'
+import { useObsidianDailyTodoCandidates } from './use-obsidian-daily-todo-candidates'
 import {
   filterObsidianDailyTodos,
   groupObsidianDailyTodos,
@@ -48,6 +49,7 @@ export function ObsidianDailyTodoPanel({
   const [agentTodo, setAgentTodo] = useState<ObsidianDailyTodoItem | null>(null)
   const [recordTodo, setRecordTodo] = useState<ObsidianDailyTodoItem | null>(null)
   const [recordSaving, setRecordSaving] = useState(false)
+  const [candidateAnalyzing, setCandidateAnalyzing] = useState(false)
 
   const loadTodos = useCallback(
     async (showLoading = true, refresh = false): Promise<void> => {
@@ -94,6 +96,25 @@ export function ObsidianDailyTodoPanel({
     [filter, snapshot?.todos]
   )
   const groups = useMemo(() => groupObsidianDailyTodos(filteredTodos), [filteredTodos])
+
+  const {
+    candidateSourceText,
+    candidates,
+    candidateError,
+    busyCandidateIds,
+    setCandidateSourceText,
+    analyzeCandidates,
+    acceptCandidate,
+    dismissCandidate
+  } = useObsidianDailyTodoCandidates({
+    directory,
+    snapshot,
+    candidateAnalyzing,
+    onSnapshot: (nextSnapshot) => {
+      setSnapshot(nextSnapshot)
+      setError(null)
+    }
+  })
 
   useEffect(() => {
     if (!highlightedTodoId) {
@@ -277,6 +298,11 @@ export function ObsidianDailyTodoPanel({
         busyTodoIds={busyTodoIds}
         draft={draft}
         priority={priority}
+        candidateSourceText={candidateSourceText}
+        candidateAnalyzing={candidateAnalyzing}
+        candidateBusyIds={busyCandidateIds}
+        candidateErrorMessage={candidateError}
+        candidates={candidates}
         onChooseDirectory={() => void chooseDirectory()}
         onRefresh={() => void loadTodos(true, true)}
         onOpen={openDailyNote}
@@ -289,6 +315,13 @@ export function ObsidianDailyTodoPanel({
         onDraftChange={setDraft}
         onPriorityChange={setPriority}
         onAdd={() => void addTodo()}
+        onCandidateSourceTextChange={setCandidateSourceText}
+        onAnalyzeCandidates={() => {
+          setCandidateAnalyzing(true)
+          void analyzeCandidates().finally(() => setCandidateAnalyzing(false))
+        }}
+        onAcceptCandidate={(candidate, overrides) => void acceptCandidate(candidate, overrides)}
+        onDismissCandidate={(candidate) => void dismissCandidate(candidate)}
         onStatusChange={(todo, status) => void updateStatus(todo, status)}
         onTextChange={(todo, text) => void updateText(todo, text)}
         onOpenWorkRecord={setRecordTodo}

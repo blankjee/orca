@@ -14,6 +14,15 @@ import {
 } from '../../shared/obsidian-daily-todo'
 import type { ObsidianDailyTodoTextUpdate } from '../../shared/obsidian-daily-todo-text'
 import type { ObsidianDailyWorkRecordSaveInput } from '../../shared/obsidian-daily-work-record'
+import { ObsidianDailyTodoCandidateService } from '../obsidian-daily-todo-candidate-service'
+import type {
+  ObsidianDailyTodoCandidateAcceptInput,
+  ObsidianDailyTodoCandidateAnalyzeInput,
+  ObsidianDailyTodoCandidateDismissInput,
+  ObsidianDailyTodoCandidateUpdateInput
+} from '../../shared/obsidian-daily-todo-candidate'
+
+const candidateService = new ObsidianDailyTodoCandidateService()
 
 export function registerObsidianDailyTodoHandlers(): void {
   ipcMain.handle(
@@ -78,6 +87,54 @@ export function registerObsidianDailyTodoHandlers(): void {
       return saveObsidianDailyWorkRecordToNote(args)
     }
   )
+
+  ipcMain.handle('obsidianDailyTodos:candidates:list', () => candidateService.list())
+  ipcMain.handle(
+    'obsidianDailyTodos:candidates:analyzeText',
+    (_event, args: ObsidianDailyTodoCandidateAnalyzeInput) => {
+      if (
+        !args ||
+        typeof args.directory !== 'string' ||
+        typeof args.filePath !== 'string' ||
+        typeof args.sourceText !== 'string'
+      ) {
+        return candidateInvalidInput('Invalid candidate analysis input.')
+      }
+      return candidateService.analyzeText(args)
+    }
+  )
+  ipcMain.handle(
+    'obsidianDailyTodos:candidates:update',
+    (_event, args: ObsidianDailyTodoCandidateUpdateInput) => {
+      if (!args || typeof args.candidateId !== 'string') {
+        return candidateInvalidInput('Invalid candidate update input.')
+      }
+      return candidateService.update(args)
+    }
+  )
+  ipcMain.handle(
+    'obsidianDailyTodos:candidates:accept',
+    (_event, args: ObsidianDailyTodoCandidateAcceptInput) => {
+      if (
+        !args ||
+        typeof args.directory !== 'string' ||
+        typeof args.filePath !== 'string' ||
+        typeof args.candidateId !== 'string'
+      ) {
+        return candidateInvalidInput('Invalid candidate accept input.')
+      }
+      return candidateService.accept(args)
+    }
+  )
+  ipcMain.handle(
+    'obsidianDailyTodos:candidates:dismiss',
+    (_event, args: ObsidianDailyTodoCandidateDismissInput) => {
+      if (!args || typeof args.candidateId !== 'string') {
+        return candidateInvalidInput('Invalid candidate dismiss input.')
+      }
+      return candidateService.dismiss(args)
+    }
+  )
 }
 
 function hasValidTodoTarget(
@@ -94,6 +151,14 @@ function hasValidTodoTarget(
 }
 
 function invalidInput(message: string): Promise<{
+  ok: false
+  code: 'invalid-input'
+  message: string
+}> {
+  return Promise.resolve({ ok: false, code: 'invalid-input', message })
+}
+
+function candidateInvalidInput(message: string): Promise<{
   ok: false
   code: 'invalid-input'
   message: string

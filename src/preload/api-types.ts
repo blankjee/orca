@@ -58,6 +58,16 @@ import type {
 } from '../shared/obsidian-daily-todo'
 import type { ObsidianDailyTodoTextUpdate } from '../shared/obsidian-daily-todo-text'
 import type { ObsidianDailyWorkRecordSaveInput } from '../shared/obsidian-daily-work-record'
+import type {
+  ObsidianDailyTodoCandidateAcceptInput,
+  ObsidianDailyTodoCandidateAcceptResult,
+  ObsidianDailyTodoCandidateAnalyzeInput,
+  ObsidianDailyTodoCandidateAnalyzeResult,
+  ObsidianDailyTodoCandidateDismissInput,
+  ObsidianDailyTodoCandidateListResult,
+  ObsidianDailyTodoCandidateMutationResult,
+  ObsidianDailyTodoCandidateUpdateInput
+} from '../shared/obsidian-daily-todo-candidate'
 import type { LinearIssueAttributeFilter } from '../shared/linear-issue-attribute-filter'
 import type { ProjectExecutionRuntimeResolution } from '../shared/project-execution-runtime'
 import type { StartupCommandDelivery } from '../shared/codex-startup-delivery'
@@ -2261,6 +2271,21 @@ export type PreloadApi = {
     add: (args: ObsidianDailyTodoAddInput) => Promise<ObsidianDailyTodoResult>
     updateText: (args: ObsidianDailyTodoTextUpdate) => Promise<ObsidianDailyTodoResult>
     saveWorkRecord: (args: ObsidianDailyWorkRecordSaveInput) => Promise<ObsidianDailyTodoResult>
+    candidates: {
+      list: () => Promise<ObsidianDailyTodoCandidateListResult>
+      analyzeText: (
+        args: ObsidianDailyTodoCandidateAnalyzeInput
+      ) => Promise<ObsidianDailyTodoCandidateAnalyzeResult>
+      update: (
+        args: ObsidianDailyTodoCandidateUpdateInput
+      ) => Promise<ObsidianDailyTodoCandidateMutationResult>
+      accept: (
+        args: ObsidianDailyTodoCandidateAcceptInput
+      ) => Promise<ObsidianDailyTodoCandidateAcceptResult>
+      dismiss: (
+        args: ObsidianDailyTodoCandidateDismissInput
+      ) => Promise<ObsidianDailyTodoCandidateMutationResult>
+    }
   }
   skills: {
     discover: (target?: SkillDiscoveryTarget) => Promise<SkillDiscoveryResult>
