@@ -1,0 +1,49 @@
+script/build_and_run.sh
+  s_42e315eba7099a::t_7cdb569b396346 1-46
+src/renderer/src/components/Terminal.tsx
+  s_26eec17967efcd::t_8e865b4f51ac2b 36
+src/renderer/src/components/terminal-pane/remote-runtime-pty-transport.test.ts
+  s_e639c2f68df89c::t_22bbdbc0333e37 1456-1510
+src/renderer/src/components/terminal-pane/remote-runtime-pty-transport.ts
+  s_e639c2f68df89c::t_dd0341a34a7fd2 44,55-60,101-102,245-251,422,450-496,530,537,617,661,740-746,783,797,806,828
+src/renderer/src/lib/app-restart-beforeunload.test.ts
+  s_26eec17967efcd::t_a8c6ef5b8f3bbb 1-47
+src/renderer/src/lib/app-restart-beforeunload.ts
+  s_26eec17967efcd::t_fe6ec2f5643cb4 1-29
+src/shared/app-restart-events.ts
+  s_26eec17967efcd::t_ea2e2390202767 1-2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c792c18a24ce01a40c9753998a1f942d9337577b",
+  "prompts": {},
+  "sessions": {
+    "s_26eec17967efcd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f87de-66ab-7490-adbf-47b38ab3cb86",
+        "model": "unknown"
+      },
+      "human_author": "huangjie.sc <huangjie.sc@bytedance.com>"
+    },
+    "s_42e315eba7099a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f6aba-0d23-7960-b887-9b70a842fd1f",
+        "model": "unknown"
+      },
+      "human_author": "huangjie.sc <huangjie.sc@bytedance.com>"
+    },
+    "s_e639c2f68df89c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f6f19-c1a8-7713-950b-5a84e6159d0c",
+        "model": "unknown"
+      },
+      "human_author": "huangjie.sc <huangjie.sc@bytedance.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
