@@ -52,7 +52,6 @@ import type {
   MarkdownDocument,
   SearchResult,
   TuiAgent,
-  UpdateStatus,
   WorktreeBaseStatusEvent,
   WorktreeDefaultTabsLaunch,
   WorktreeHeadIdentity,
@@ -105,6 +104,8 @@ import type {
   ObsidianDailyTodoResult,
   ObsidianDailyTodoStatusUpdate
 } from '../shared/obsidian-daily-todo'
+import type { ObsidianDailyTodoTextUpdate } from '../shared/obsidian-daily-todo-text'
+import type { ObsidianDailyWorkRecordSaveInput } from '../shared/obsidian-daily-work-record'
 import type {
   AddIssueCommentBySlugArgs,
   ClearProjectItemFieldArgs,
@@ -191,10 +192,8 @@ import {
 } from '../shared/editor-save-events'
 import {
   ORCA_APP_RESTART_ABORTED_EVENT,
-  ORCA_APP_RESTART_STARTED_EVENT,
-  ORCA_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT,
-  ORCA_UPDATER_QUIT_AND_INSTALL_STARTED_EVENT
-} from '../shared/updater-renderer-events'
+  ORCA_APP_RESTART_STARTED_EVENT
+} from '../shared/app-restart-events'
 import {
   ORCA_INTERNAL_FILE_DRAG_TYPE,
   createNativeFileDropPayload,
@@ -2228,7 +2227,11 @@ const api = {
     setStatus: (args: ObsidianDailyTodoStatusUpdate): Promise<ObsidianDailyTodoResult> =>
       ipcRenderer.invoke('obsidianDailyTodos:setStatus', args),
     add: (args: ObsidianDailyTodoAddInput): Promise<ObsidianDailyTodoResult> =>
-      ipcRenderer.invoke('obsidianDailyTodos:add', args)
+      ipcRenderer.invoke('obsidianDailyTodos:add', args),
+    updateText: (args: ObsidianDailyTodoTextUpdate): Promise<ObsidianDailyTodoResult> =>
+      ipcRenderer.invoke('obsidianDailyTodos:updateText', args),
+    saveWorkRecord: (args: ObsidianDailyWorkRecordSaveInput): Promise<ObsidianDailyTodoResult> =>
+      ipcRenderer.invoke('obsidianDailyTodos:saveWorkRecord', args)
   },
 
   skills: {
@@ -2754,36 +2757,6 @@ const api = {
       return () => ipcRenderer.removeListener('remoteWorkspace:changed', listener)
     }
   } satisfies PreloadApi['remoteWorkspace'],
-
-  updater: {
-    getStatus: () => ipcRenderer.invoke('updater:getStatus'),
-    getVersion: () => ipcRenderer.invoke('updater:getVersion'),
-    check: (options) => ipcRenderer.invoke('updater:check', options),
-    download: () => ipcRenderer.invoke('updater:download'),
-    dismissNudge: () => ipcRenderer.invoke('updater:dismissNudge'),
-    quitAndInstall: async (): Promise<void> => {
-      await prepareRendererForAppRestart({
-        startedEventName: ORCA_UPDATER_QUIT_AND_INSTALL_STARTED_EVENT,
-        abortedEventName: ORCA_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT
-      })
-      try {
-        return await ipcRenderer.invoke('updater:quitAndInstall')
-      } catch (error) {
-        window.dispatchEvent(new Event(ORCA_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT))
-        throw error
-      }
-    },
-    onStatus: (callback) => {
-      const listener = (_event: Electron.IpcRendererEvent, status: UpdateStatus) => callback(status)
-      ipcRenderer.on('updater:status', listener)
-      return () => ipcRenderer.removeListener('updater:status', listener)
-    },
-    onClearDismissal: (callback) => {
-      const listener = (_event: Electron.IpcRendererEvent) => callback()
-      ipcRenderer.on('updater:clearDismissal', listener)
-      return () => ipcRenderer.removeListener('updater:clearDismissal', listener)
-    }
-  } satisfies PreloadApi['updater'],
 
   notebook: {
     runPythonCell: (args: {

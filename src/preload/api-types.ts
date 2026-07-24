@@ -56,6 +56,8 @@ import type {
   ObsidianDailyTodoResult,
   ObsidianDailyTodoStatusUpdate
 } from '../shared/obsidian-daily-todo'
+import type { ObsidianDailyTodoTextUpdate } from '../shared/obsidian-daily-todo-text'
+import type { ObsidianDailyWorkRecordSaveInput } from '../shared/obsidian-daily-work-record'
 import type { LinearIssueAttributeFilter } from '../shared/linear-issue-attribute-filter'
 import type { ProjectExecutionRuntimeResolution } from '../shared/project-execution-runtime'
 import type { StartupCommandDelivery } from '../shared/codex-startup-delivery'
@@ -209,8 +211,6 @@ import type {
   StatsSummary,
   MemorySnapshot,
   TuiAgent,
-  UpdateCheckOptions,
-  UpdateStatus,
   Worktree,
   WorktreeBaseStatusEvent,
   WorktreeHeadIdentity,
@@ -2259,6 +2259,8 @@ export type PreloadApi = {
     }) => Promise<ObsidianDailyTodoResult>
     setStatus: (args: ObsidianDailyTodoStatusUpdate) => Promise<ObsidianDailyTodoResult>
     add: (args: ObsidianDailyTodoAddInput) => Promise<ObsidianDailyTodoResult>
+    updateText: (args: ObsidianDailyTodoTextUpdate) => Promise<ObsidianDailyTodoResult>
+    saveWorkRecord: (args: ObsidianDailyWorkRecordSaveInput) => Promise<ObsidianDailyTodoResult>
   }
   skills: {
     discover: (target?: SkillDiscoveryTarget) => Promise<SkillDiscoveryResult>
@@ -2396,16 +2398,6 @@ export type PreloadApi = {
     }) => Promise<{ targetId: string; clients: RemoteWorkspaceConnectedClient[] }[]>
     clientId: () => Promise<string>
     onChanged: (callback: (event: RemoteWorkspaceChangedEvent) => void) => () => void
-  }
-  updater: {
-    getVersion: () => Promise<string>
-    getStatus: () => Promise<UpdateStatus>
-    check: (options?: UpdateCheckOptions) => Promise<void>
-    download: () => Promise<void>
-    quitAndInstall: () => Promise<void>
-    dismissNudge: () => Promise<void>
-    onStatus: (callback: (status: UpdateStatus) => void) => () => void
-    onClearDismissal: (callback: () => void) => () => void
   }
   notebook: {
     runPythonCell: (args: {

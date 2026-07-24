@@ -12,11 +12,15 @@ import type {
   ObsidianDailyTodoSnapshot,
   ObsidianDailyTodoStatus
 } from '../../../shared/obsidian-daily-todo'
+import { ObsidianDailyTodoPanelContent } from './obsidian-daily-todo-panel-content'
+import { ObsidianDailyWorkRecordSheet } from './obsidian-daily-work-record-sheet'
+import { ObsidianTodoAgentLaunchDialog } from './ObsidianTodoAgentLaunchDialog'
 import {
-  ObsidianDailyTodoPanelContent,
-  type ObsidianDailyTodoCounts
-} from './obsidian-daily-todo-panel-content'
-import { groupObsidianDailyTodos } from './obsidian-daily-todo-presentation'
+  filterObsidianDailyTodos,
+  groupObsidianDailyTodos,
+  summarizeObsidianDailyTodos,
+  type ObsidianDailyTodoFilter
+} from './obsidian-daily-todo-presentation'
 
 type ObsidianDailyTodoPanelProps = {
   directory: string
@@ -39,6 +43,11 @@ export function ObsidianDailyTodoPanel({
   const [draft, setDraft] = useState('')
   const [priority, setPriority] = useState<TodoPriority>('P2')
   const [selectedFilePath, setSelectedFilePath] = useState<string | undefined>()
+  const [filter, setFilter] = useState<ObsidianDailyTodoFilter>('all')
+  const [highlightedTodoId, setHighlightedTodoId] = useState<string | null>(null)
+  const [agentTodo, setAgentTodo] = useState<ObsidianDailyTodoItem | null>(null)
+  const [recordTodo, setRecordTodo] = useState<ObsidianDailyTodoItem | null>(null)
+  const [recordSaving, setRecordSaving] = useState(false)
 
   const loadTodos = useCallback(
     async (showLoading = true, refresh = false): Promise<void> => {
@@ -76,8 +85,31 @@ export function ObsidianDailyTodoPanel({
     return () => window.clearInterval(poll)
   }, [loadTodos])
 
-  const groups = useMemo(() => groupObsidianDailyTodos(snapshot?.todos ?? []), [snapshot?.todos])
-  const counts = useMemo(() => countTodos(snapshot?.todos ?? []), [snapshot?.todos])
+  const overview = useMemo(
+    () => summarizeObsidianDailyTodos(snapshot?.todos ?? []),
+    [snapshot?.todos]
+  )
+  const filteredTodos = useMemo(
+    () => filterObsidianDailyTodos(snapshot?.todos ?? [], filter),
+    [filter, snapshot?.todos]
+  )
+  const groups = useMemo(() => groupObsidianDailyTodos(filteredTodos), [filteredTodos])
+
+  useEffect(() => {
+    if (!highlightedTodoId) {
+      return
+    }
+    const frame = window.requestAnimationFrame(() => {
+      document
+        .getElementById(`obsidian-todo-${highlightedTodoId}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
+    const timeout = window.setTimeout(() => setHighlightedTodoId(null), 1_600)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(timeout)
+    }
+  }, [groups, highlightedTodoId])
 
   const chooseDirectory = async (): Promise<void> => {
     const selected = await window.api.shell.pickDirectory({ defaultPath: directory || undefined })
@@ -85,7 +117,22 @@ export function ObsidianDailyTodoPanel({
       return
     }
     setSelectedFilePath(undefined)
+    setFilter('all')
+    setHighlightedTodoId(null)
     await onSaveDirectory(selected)
+  }
+
+  const selectNote = (filePath: string): void => {
+    setFilter('all')
+    setHighlightedTodoId(null)
+    setAgentTodo(null)
+    setRecordTodo(null)
+    setSelectedFilePath(filePath)
+  }
+
+  const focusTodo = (todo: ObsidianDailyTodoItem): void => {
+    setFilter(todo.status === 'cancelled' ? 'all' : todo.status)
+    setHighlightedTodoId(todo.id)
   }
 
   const openDailyNote = (): void => {
@@ -157,37 +204,129 @@ export function ObsidianDailyTodoPanel({
     }
   }
 
-  return (
-    <ObsidianDailyTodoPanelContent
-      directory={directory}
-      snapshot={snapshot}
-      errorMessage={error ? getErrorMessage(error) : null}
-      loading={loading}
-      adding={adding}
-      groups={groups}
-      counts={counts}
-      busyTodoIds={busyTodoIds}
-      draft={draft}
-      priority={priority}
-      onChooseDirectory={() => void chooseDirectory()}
-      onRefresh={() => void loadTodos(true, true)}
-      onOpen={openDailyNote}
-      onSelectNote={setSelectedFilePath}
-      onDraftChange={setDraft}
-      onPriorityChange={setPriority}
-      onAdd={() => void addTodo()}
-      onStatusChange={(todo, status) => void updateStatus(todo, status)}
-    />
-  )
-}
-
-function countTodos(todos: readonly ObsidianDailyTodoItem[]): ObsidianDailyTodoCounts {
-  return {
-    total: todos.length,
-    pending: todos.filter((todo) => todo.status === 'pending').length,
-    inProgress: todos.filter((todo) => todo.status === 'in-progress').length,
-    completed: todos.filter((todo) => todo.status === 'completed').length
+  const updateText = async (todo: ObsidianDailyTodoItem, text: string): Promise<void> => {
+    const filePath = snapshot?.filePath
+    if (!filePath || text.trim() === todo.text) {
+      return
+    }
+    setBusyTodoIds((current) => new Set(current).add(todo.id))
+    try {
+      const result = await window.api.obsidianDailyTodos.updateText({
+        directory,
+        filePath,
+        todo,
+        text
+      })
+      applyResult(result, setSnapshot, setError)
+      if (!result.ok) {
+        toast.error(getErrorMessage(result))
+      }
+    } finally {
+      setBusyTodoIds((current) => {
+        const next = new Set(current)
+        next.delete(todo.id)
+        return next
+      })
+    }
   }
+
+  const saveWorkRecord = async (
+    todo: ObsidianDailyTodoItem,
+    body: string,
+    expectedBody: string | null
+  ): Promise<void> => {
+    const filePath = snapshot?.filePath
+    if (!filePath || recordSaving) {
+      return
+    }
+    setRecordSaving(true)
+    try {
+      const result = await window.api.obsidianDailyTodos.saveWorkRecord({
+        directory,
+        filePath,
+        todo,
+        body,
+        expectedBody
+      })
+      applyResult(result, setSnapshot, setError)
+      if (result.ok) {
+        setRecordTodo(null)
+        toast.success(
+          translate('auto.components.ObsidianDailyWorkRecordSheet.saved', 'Work record saved')
+        )
+      } else {
+        toast.error(getErrorMessage(result))
+      }
+    } finally {
+      setRecordSaving(false)
+    }
+  }
+
+  return (
+    <>
+      <ObsidianDailyTodoPanelContent
+        directory={directory}
+        snapshot={snapshot}
+        errorMessage={error ? getErrorMessage(error) : null}
+        loading={loading}
+        adding={adding}
+        groups={groups}
+        overview={overview}
+        filter={filter}
+        highlightedTodoId={highlightedTodoId}
+        busyTodoIds={busyTodoIds}
+        draft={draft}
+        priority={priority}
+        onChooseDirectory={() => void chooseDirectory()}
+        onRefresh={() => void loadTodos(true, true)}
+        onOpen={openDailyNote}
+        onSelectNote={selectNote}
+        onFilterChange={(nextFilter) => {
+          setFilter(nextFilter)
+          setHighlightedTodoId(null)
+        }}
+        onFocusTodo={focusTodo}
+        onDraftChange={setDraft}
+        onPriorityChange={setPriority}
+        onAdd={() => void addTodo()}
+        onStatusChange={(todo, status) => void updateStatus(todo, status)}
+        onTextChange={(todo, text) => void updateText(todo, text)}
+        onOpenWorkRecord={setRecordTodo}
+        onAiExecute={setAgentTodo}
+      />
+      <ObsidianDailyWorkRecordSheet
+        key={recordTodo?.id ?? 'closed'}
+        todo={recordTodo}
+        record={
+          recordTodo
+            ? (snapshot?.workRecords.find((record) => record.title === recordTodo.text) ?? null)
+            : null
+        }
+        open={recordTodo !== null}
+        saving={recordSaving}
+        onOpenChange={(open) => {
+          if (!open && !recordSaving) {
+            setRecordTodo(null)
+          }
+        }}
+        onSave={(body, expectedBody) => {
+          if (recordTodo) {
+            void saveWorkRecord(recordTodo, body, expectedBody)
+          }
+        }}
+      />
+      <ObsidianTodoAgentLaunchDialog
+        todo={agentTodo}
+        snapshot={snapshot}
+        open={agentTodo !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAgentTodo(null)
+          }
+        }}
+      />
+    </>
+  )
 }
 
 function applyResult(

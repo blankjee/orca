@@ -12,6 +12,16 @@ import {
   type ObsidianDailyTodoStatusUpdate
 } from '../shared/obsidian-daily-todo'
 import {
+  updateObsidianDailyTodoText,
+  type ObsidianDailyTodoTextUpdate
+} from '../shared/obsidian-daily-todo-text'
+import {
+  parseObsidianDailyWorkRecords,
+  renameObsidianDailyWorkRecord,
+  saveObsidianDailyWorkRecord,
+  type ObsidianDailyWorkRecordSaveInput
+} from '../shared/obsidian-daily-work-record'
+import {
   chooseBestObsidianDailyNote,
   discoverObsidianDailyNotes,
   ObsidianDailyNoteDiscoveryError,
@@ -76,6 +86,67 @@ export async function addObsidianDailyTodoToNote(
   }
 }
 
+export async function updateObsidianDailyTodoTextInNote(
+  input: ObsidianDailyTodoTextUpdate,
+  now: Date = new Date()
+): Promise<ObsidianDailyTodoResult> {
+  try {
+    validateTodoText(input.text)
+    const target = await resolveRequestedNote(input.directory, input.filePath, now)
+    const markdown = await readMarkdown(target.filePath)
+    const updatedTodo = updateObsidianDailyTodoText(markdown, input.todo, input.text)
+    const updated = updatedTodo
+      ? renameObsidianDailyWorkRecord(updatedTodo, input.todo.text, input.text.trim())
+      : null
+    if (updated === null) {
+      throw new ObsidianDailyTodoServiceError(
+        'todo-conflict',
+        'The todo or its work record changed on disk. Refresh before updating it.'
+      )
+    }
+    await writeMarkdown(target.filePath, updated)
+    return { ok: true, snapshot: await readSnapshot(input.directory, target.filePath, now) }
+  } catch (error) {
+    return serviceErrorResult(error)
+  }
+}
+
+export async function saveObsidianDailyWorkRecordToNote(
+  input: ObsidianDailyWorkRecordSaveInput,
+  now: Date = new Date()
+): Promise<ObsidianDailyTodoResult> {
+  try {
+    validateWorkRecordBody(input.body)
+    const target = await resolveRequestedNote(input.directory, input.filePath, now)
+    const markdown = await readMarkdown(target.filePath)
+    const currentTodos = parseObsidianDailyTodos(markdown)
+    const originalTodo = currentTodos.find((todo) => todo.lineNumber === input.todo.lineNumber)
+    const matchingTodos = currentTodos.filter((todo) => todo.rawLine === input.todo.rawLine)
+    if (originalTodo?.rawLine !== input.todo.rawLine && matchingTodos.length !== 1) {
+      throw new ObsidianDailyTodoServiceError(
+        'todo-conflict',
+        'The todo changed on disk. Refresh before saving its work record.'
+      )
+    }
+    const updated = saveObsidianDailyWorkRecord(
+      markdown,
+      input.todo.text,
+      input.body,
+      input.expectedBody
+    )
+    if (updated === null) {
+      throw new ObsidianDailyTodoServiceError(
+        'todo-conflict',
+        'The work record changed on disk. Refresh before saving it.'
+      )
+    }
+    await writeMarkdown(target.filePath, updated)
+    return { ok: true, snapshot: await readSnapshot(input.directory, target.filePath, now) }
+  } catch (error) {
+    return serviceErrorResult(error)
+  }
+}
+
 async function readSnapshot(
   directory: string,
   requestedFilePath: string | undefined,
@@ -107,6 +178,7 @@ async function readSnapshot(
       relativePath: null,
       modifiedAt: null,
       todos: [],
+      workRecords: [],
       dailyNotes
     }
   }
@@ -123,6 +195,7 @@ async function readSnapshot(
     relativePath: selected.relativePath,
     modifiedAt: metadata.mtimeMs,
     todos: parseObsidianDailyTodos(markdown),
+    workRecords: parseObsidianDailyWorkRecords(markdown),
     dailyNotes
   }
 }
@@ -184,6 +257,15 @@ function validateTodoText(text: string): void {
     throw new ObsidianDailyTodoServiceError(
       'invalid-input',
       'Todo text must be one non-empty line under 1,000 characters.'
+    )
+  }
+}
+
+function validateWorkRecordBody(body: string): void {
+  if (typeof body !== 'string' || body.length > 100_000) {
+    throw new ObsidianDailyTodoServiceError(
+      'invalid-input',
+      'Work record content must be under 100,000 characters.'
     )
   }
 }

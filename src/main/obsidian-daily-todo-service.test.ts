@@ -6,7 +6,9 @@ import { describe, expect, it } from 'vitest'
 import {
   addObsidianDailyTodoToNote,
   loadObsidianDailyTodos,
-  setObsidianDailyTodoStatus
+  saveObsidianDailyWorkRecordToNote,
+  setObsidianDailyTodoStatus,
+  updateObsidianDailyTodoTextInNote
 } from './obsidian-daily-todo-service'
 
 const TODAY = new Date(2026, 6, 16, 12)
@@ -73,6 +75,54 @@ describe('Obsidian daily todo service', () => {
 
     expect(result.ok, result.ok ? '' : result.message).toBe(true)
     await expect(readFile(filePath, 'utf8')).resolves.toContain('- [ ] existing\n\n- [ ] new task')
+  })
+
+  it('renames a task and its matching work record together', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'orca-obsidian-todos-'))
+    const filePath = join(directory, '2026-07-16.md')
+    await writeFile(filePath, '- [ ] old title\n\n## 工作记录\n\n### old title\n\nprogress\n')
+    const loaded = await loadObsidianDailyTodos(directory, filePath, TODAY)
+    if (!loaded.ok) {
+      throw new Error(loaded.message)
+    }
+
+    const result = await updateObsidianDailyTodoTextInNote(
+      { directory, filePath, todo: loaded.snapshot.todos[0], text: 'new title' },
+      TODAY
+    )
+
+    expect(result.ok, result.ok ? '' : result.message).toBe(true)
+    await expect(readFile(filePath, 'utf8')).resolves.toContain(
+      '- [ ] new title\n\n## 工作记录\n\n### new title'
+    )
+  })
+
+  it('saves a task work record back to the daily note', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'orca-obsidian-todos-'))
+    const filePath = join(directory, '2026-07-16.md')
+    await writeFile(filePath, '- [/] ship\n')
+    const loaded = await loadObsidianDailyTodos(directory, filePath, TODAY)
+    if (!loaded.ok) {
+      throw new Error(loaded.message)
+    }
+
+    const result = await saveObsidianDailyWorkRecordToNote(
+      {
+        directory,
+        filePath,
+        todo: loaded.snapshot.todos[0],
+        body: 'Implemented the parser.',
+        expectedBody: null
+      },
+      TODAY
+    )
+
+    expect(result.ok, result.ok ? '' : result.message).toBe(true)
+    if (result.ok) {
+      expect(result.snapshot.workRecords).toEqual([
+        { title: 'ship', body: 'Implemented the parser.' }
+      ])
+    }
   })
 
   it('loads a selected historical daily note from the discovered collection', async () => {

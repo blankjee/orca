@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import type { ObsidianDailyTodoItem } from '../../../shared/obsidian-daily-todo'
 import {
+  filterObsidianDailyTodos,
   getNextObsidianDailyTodoStatus,
   getObsidianTodoDisplayText,
-  groupObsidianDailyTodos
+  groupObsidianDailyTodos,
+  summarizeObsidianDailyTodos
 } from './obsidian-daily-todo-presentation'
 
 function todo(
@@ -52,5 +54,24 @@ describe('Obsidian daily todo presentation', () => {
     expect(getObsidianTodoDisplayText('Review [[spec|the spec]] with [[Alice]]')).toBe(
       'Review the spec with Alice'
     )
+  })
+
+  it('summarizes progress with the current and next actionable todos', () => {
+    const todos = [
+      todo('done', '今日任务', 'P1', 'completed'),
+      todo('active', '今日任务', 'P2', 'in-progress'),
+      todo('next', '今日任务', 'P3')
+    ]
+
+    expect(summarizeObsidianDailyTodos(todos)).toMatchObject({
+      total: 3,
+      pending: 1,
+      inProgress: 1,
+      completed: 1,
+      completionPercent: 33,
+      currentTodo: todos[1],
+      nextTodo: todos[2]
+    })
+    expect(filterObsidianDailyTodos(todos, 'completed')).toEqual([todos[0]])
   })
 })

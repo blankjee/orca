@@ -1,5 +1,5 @@
 import React from 'react'
-import { ExternalLink, FolderOpen, LoaderCircle, NotebookPen, Plus, RefreshCw } from 'lucide-react'
+import { FolderOpen, LoaderCircle, NotebookPen, Plus, RefreshCw } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,23 +11,21 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { translate } from '@/i18n/i18n'
+import { i18n, translate } from '@/i18n/i18n'
 import type {
   ObsidianDailyTodoItem,
   ObsidianDailyTodoSnapshot,
   ObsidianDailyTodoStatus
 } from '../../../shared/obsidian-daily-todo'
-import { ObsidianDailyNotePicker } from './obsidian-daily-note-picker'
+import { ObsidianDailyDateHeader } from './obsidian-daily-date-header'
+import { formatObsidianDailyDateShort } from './obsidian-daily-date-navigation'
 import { ObsidianDailyTodoList } from './obsidian-daily-todo-list'
-import type { ObsidianDailyTodoGroup } from './obsidian-daily-todo-presentation'
-
-export type ObsidianDailyTodoCounts = {
-  total: number
-  pending: number
-  inProgress: number
-  completed: number
-}
+import { ObsidianDailyTodoOverviewPanel } from './obsidian-daily-todo-overview'
+import type {
+  ObsidianDailyTodoFilter,
+  ObsidianDailyTodoGroup,
+  ObsidianDailyTodoOverview
+} from './obsidian-daily-todo-presentation'
 
 type TodoPriority = 'P1' | 'P2' | 'P3'
 
@@ -38,7 +36,9 @@ type ObsidianDailyTodoPanelContentProps = {
   loading: boolean
   adding: boolean
   groups: readonly ObsidianDailyTodoGroup[]
-  counts: ObsidianDailyTodoCounts
+  overview: ObsidianDailyTodoOverview
+  filter: ObsidianDailyTodoFilter
+  highlightedTodoId: string | null
   busyTodoIds: ReadonlySet<string>
   draft: string
   priority: TodoPriority
@@ -46,10 +46,15 @@ type ObsidianDailyTodoPanelContentProps = {
   onRefresh: () => void
   onOpen: () => void
   onSelectNote: (filePath: string) => void
+  onFilterChange: (filter: ObsidianDailyTodoFilter) => void
+  onFocusTodo: (todo: ObsidianDailyTodoItem) => void
   onDraftChange: (value: string) => void
   onPriorityChange: (priority: TodoPriority) => void
   onAdd: () => void
   onStatusChange: (todo: ObsidianDailyTodoItem, status: ObsidianDailyTodoStatus) => void
+  onTextChange: (todo: ObsidianDailyTodoItem, text: string) => void
+  onOpenWorkRecord: (todo: ObsidianDailyTodoItem) => void
+  onAiExecute: (todo: ObsidianDailyTodoItem) => void
 }
 
 export function ObsidianDailyTodoPanelContent({
@@ -59,7 +64,9 @@ export function ObsidianDailyTodoPanelContent({
   loading,
   adding,
   groups,
-  counts,
+  overview,
+  filter,
+  highlightedTodoId,
   busyTodoIds,
   draft,
   priority,
@@ -67,54 +74,26 @@ export function ObsidianDailyTodoPanelContent({
   onRefresh,
   onOpen,
   onSelectNote,
+  onFilterChange,
+  onFocusTodo,
   onDraftChange,
   onPriorityChange,
   onAdd,
-  onStatusChange
+  onStatusChange,
+  onTextChange,
+  onOpenWorkRecord,
+  onAiExecute
 }: ObsidianDailyTodoPanelContentProps): React.JSX.Element {
   return (
     <section className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border/60 bg-background shadow-xs">
-      <header className="flex h-12 shrink-0 items-center gap-3 border-b border-border/60 px-3">
-        <span className="flex size-7 items-center justify-center rounded-md border border-border bg-muted/40">
-          <NotebookPen className="size-4 text-muted-foreground" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <h2 className="truncate text-sm font-semibold">
-            {translate('auto.components.ObsidianDailyTodoPanel.title', 'Daily Todo')}
-          </h2>
-          <p className="truncate font-mono text-[11px] text-muted-foreground">
-            {snapshot?.filePath ||
-              directory ||
-              translate('auto.components.ObsidianDailyTodoPanel.notConfigured', 'Not configured')}
-          </p>
-        </div>
-        <ObsidianDailyNotePicker
-          snapshot={snapshot}
-          disabled={loading || !snapshot || snapshot.dailyNotes.length === 0}
-          onSelect={onSelectNote}
-        />
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              disabled={loading || !directory}
-              onClick={onRefresh}
-              aria-label={translate('auto.components.ObsidianDailyTodoPanel.refresh', 'Refresh')}
-            >
-              <RefreshCw className={loading ? 'animate-spin' : undefined} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {translate('auto.components.ObsidianDailyTodoPanel.refresh', 'Refresh')}
-          </TooltipContent>
-        </Tooltip>
-        <Button type="button" variant="outline" size="sm" onClick={onOpen}>
-          <ExternalLink />
-          {translate('auto.components.ObsidianDailyTodoPanel.openObsidian', 'Open Obsidian')}
-        </Button>
-      </header>
+      <ObsidianDailyDateHeader
+        directory={directory}
+        snapshot={snapshot}
+        loading={loading}
+        onRefresh={onRefresh}
+        onOpen={onOpen}
+        onSelectNote={onSelectNote}
+      />
 
       {!directory.trim() ? (
         <ConfigureVaultState onChoose={onChooseDirectory} />
@@ -125,42 +104,27 @@ export function ObsidianDailyTodoPanelContent({
       ) : errorMessage && !snapshot ? (
         <ErrorState message={errorMessage} onChoose={onChooseDirectory} onRetry={onRefresh} />
       ) : snapshot && !snapshot.filePath ? (
-        <MissingTodayState />
+        <MissingTodayState onOpen={onOpen} />
       ) : (
         <ScrollArea className="min-h-0 flex-1">
           <div className="mx-auto w-full max-w-5xl space-y-4 p-4">
-            <TodoCounts counts={counts} />
-            <form
-              className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/20 p-2.5"
-              onSubmit={(event) => {
-                event.preventDefault()
-                onAdd()
-              }}
-            >
-              <Plus className="ml-1 size-4 shrink-0 text-muted-foreground" />
-              <Input
-                value={draft}
-                onChange={(event) => onDraftChange(event.target.value)}
-                placeholder={translate(
-                  'auto.components.ObsidianDailyTodoPanel.addPlaceholder',
-                  'Add a task to this daily note'
-                )}
-                aria-label={translate(
-                  'auto.components.ObsidianDailyTodoPanel.addPlaceholder',
-                  'Add a task to this daily note'
-                )}
-                className="min-w-0 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0"
+            {overview.total > 0 ? (
+              <ObsidianDailyTodoOverviewPanel
+                overview={overview}
+                filter={filter}
+                onFilterChange={onFilterChange}
+                onFocusTodo={onFocusTodo}
               />
-              <PrioritySelect value={priority} onChange={onPriorityChange} />
-              <Button
-                type="submit"
-                size="sm"
-                disabled={!snapshot?.filePath || !draft.trim() || adding}
-              >
-                {adding ? <LoaderCircle className="animate-spin" /> : <Plus />}
-                {translate('auto.components.ObsidianDailyTodoPanel.add', 'Add')}
-              </Button>
-            </form>
+            ) : null}
+            <AddTodoForm
+              snapshot={snapshot}
+              draft={draft}
+              priority={priority}
+              adding={adding}
+              onDraftChange={onDraftChange}
+              onPriorityChange={onPriorityChange}
+              onAdd={onAdd}
+            />
 
             {errorMessage ? (
               <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
@@ -171,9 +135,17 @@ export function ObsidianDailyTodoPanelContent({
             {groups.length > 0 ? (
               <ObsidianDailyTodoList
                 groups={groups}
+                filter={filter}
+                highlightedTodoId={highlightedTodoId}
                 busyTodoIds={busyTodoIds}
+                workRecordTitles={new Set(snapshot?.workRecords.map((record) => record.title))}
                 onStatusChange={onStatusChange}
+                onTextChange={onTextChange}
+                onOpenWorkRecord={onOpenWorkRecord}
+                onAiExecute={onAiExecute}
               />
+            ) : overview.total > 0 ? (
+              <FilteredTodoState onClear={() => onFilterChange('all')} />
             ) : (
               <EmptyTodoState />
             )}
@@ -181,6 +153,56 @@ export function ObsidianDailyTodoPanelContent({
         </ScrollArea>
       )}
     </section>
+  )
+}
+
+function AddTodoForm({
+  snapshot,
+  draft,
+  priority,
+  adding,
+  onDraftChange,
+  onPriorityChange,
+  onAdd
+}: {
+  snapshot: ObsidianDailyTodoSnapshot | null
+  draft: string
+  priority: TodoPriority
+  adding: boolean
+  onDraftChange: (value: string) => void
+  onPriorityChange: (priority: TodoPriority) => void
+  onAdd: () => void
+}): React.JSX.Element {
+  const placeholder = snapshot?.date
+    ? translate('auto.components.ObsidianDailyTodoPanel.addPlaceholderDate', 'Add to {{value0}}', {
+        value0: formatObsidianDailyDateShort(snapshot.date, i18n.language)
+      })
+    : translate(
+        'auto.components.ObsidianDailyTodoPanel.addPlaceholder',
+        'Add a task to this daily note'
+      )
+  return (
+    <form
+      className="flex items-center gap-2 rounded-lg border border-obsidian-daily-compose-accent/25 border-l-[3px] border-l-obsidian-daily-compose-accent bg-[color-mix(in_srgb,var(--obsidian-daily-compose-accent)_4%,var(--card))] p-2.5"
+      onSubmit={(event) => {
+        event.preventDefault()
+        onAdd()
+      }}
+    >
+      <Plus className="ml-1 size-4 shrink-0 text-obsidian-daily-compose-accent" />
+      <Input
+        value={draft}
+        onChange={(event) => onDraftChange(event.target.value)}
+        placeholder={placeholder}
+        aria-label={placeholder}
+        className="min-w-0 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0"
+      />
+      <PrioritySelect value={priority} onChange={onPriorityChange} />
+      <Button type="submit" size="sm" disabled={!snapshot?.filePath || !draft.trim() || adding}>
+        {adding ? <LoaderCircle className="animate-spin" /> : <Plus />}
+        {translate('auto.components.ObsidianDailyTodoPanel.add', 'Add')}
+      </Button>
+    </form>
   )
 }
 
@@ -261,7 +283,7 @@ function ErrorState({
   )
 }
 
-function MissingTodayState(): React.JSX.Element {
+function MissingTodayState({ onOpen }: { onOpen: () => void }): React.JSX.Element {
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
       <NotebookPen className="mb-4 size-9 text-muted-foreground" />
@@ -277,39 +299,20 @@ function MissingTodayState(): React.JSX.Element {
           'Choose any discovered daily note from the date menu above.'
         )}
       </p>
-    </div>
-  )
-}
-
-function TodoCounts({ counts }: { counts: ObsidianDailyTodoCounts }): React.JSX.Element {
-  const items = [
-    [translate('auto.components.ObsidianDailyTodoPanel.total', 'Total'), counts.total],
-    [translate('auto.components.ObsidianDailyTodoPanel.pending', 'Pending'), counts.pending],
-    [
-      translate('auto.components.ObsidianDailyTodoPanel.inProgress', 'In progress'),
-      counts.inProgress
-    ],
-    [translate('auto.components.ObsidianDailyTodoPanel.completed', 'Completed'), counts.completed]
-  ] as const
-  return (
-    <div className="grid grid-cols-2 overflow-hidden rounded-lg border border-border/60 bg-muted/20 sm:grid-cols-4">
-      {items.map(([label, value], index) => (
-        <div
-          key={label}
-          className={index === 0 ? 'px-3 py-2.5' : 'border-l border-border/50 px-3 py-2.5'}
-        >
-          <div className="text-lg font-semibold tabular-nums">{value}</div>
-          <div className="text-[11px] text-muted-foreground">{label}</div>
-        </div>
-      ))}
+      <Button type="button" className="mt-5" onClick={onOpen}>
+        {translate(
+          'auto.components.ObsidianDailyTodoPanel.createTodayInObsidian',
+          'Create today’s note in Obsidian'
+        )}
+      </Button>
     </div>
   )
 }
 
 function EmptyTodoState(): React.JSX.Element {
   return (
-    <div className="flex flex-col items-center py-16 text-center">
-      <NotebookPen className="mb-3 size-8 text-muted-foreground" />
+    <div className="flex flex-col items-center py-10 text-center">
+      <NotebookPen className="mb-3 size-7 text-muted-foreground" />
       <p className="text-sm font-medium">
         {translate(
           'auto.components.ObsidianDailyTodoPanel.emptyTitle',
@@ -322,6 +325,22 @@ function EmptyTodoState(): React.JSX.Element {
           'Add one above or use a checklist like “- [ ] Task” in Obsidian.'
         )}
       </p>
+    </div>
+  )
+}
+
+function FilteredTodoState({ onClear }: { onClear: () => void }): React.JSX.Element {
+  return (
+    <div className="flex flex-col items-center py-10 text-center">
+      <p className="text-sm text-muted-foreground">
+        {translate(
+          'auto.components.ObsidianDailyTodoPanel.noFilteredTasks',
+          'No tasks match this filter.'
+        )}
+      </p>
+      <Button type="button" variant="link" size="sm" onClick={onClear}>
+        {translate('auto.components.ObsidianDailyTodoPanel.clearFilter', 'Show all tasks')}
+      </Button>
     </div>
   )
 }

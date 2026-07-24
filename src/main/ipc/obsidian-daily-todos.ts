@@ -3,13 +3,17 @@ import { ipcMain } from 'electron'
 import {
   addObsidianDailyTodoToNote,
   loadObsidianDailyTodos,
-  setObsidianDailyTodoStatus
+  saveObsidianDailyWorkRecordToNote,
+  setObsidianDailyTodoStatus,
+  updateObsidianDailyTodoTextInNote
 } from '../obsidian-daily-todo-service'
 import {
   isObsidianDailyTodoStatus,
   type ObsidianDailyTodoAddInput,
   type ObsidianDailyTodoStatusUpdate
 } from '../../shared/obsidian-daily-todo'
+import type { ObsidianDailyTodoTextUpdate } from '../../shared/obsidian-daily-todo-text'
+import type { ObsidianDailyWorkRecordSaveInput } from '../../shared/obsidian-daily-work-record'
 
 export function registerObsidianDailyTodoHandlers(): void {
   ipcMain.handle(
@@ -55,4 +59,44 @@ export function registerObsidianDailyTodoHandlers(): void {
     }
     return addObsidianDailyTodoToNote(args)
   })
+  ipcMain.handle('obsidianDailyTodos:updateText', (_event, args: ObsidianDailyTodoTextUpdate) => {
+    if (!hasValidTodoTarget(args) || typeof args.text !== 'string') {
+      return invalidInput('Invalid todo text update.')
+    }
+    return updateObsidianDailyTodoTextInNote(args)
+  })
+  ipcMain.handle(
+    'obsidianDailyTodos:saveWorkRecord',
+    (_event, args: ObsidianDailyWorkRecordSaveInput) => {
+      if (
+        !hasValidTodoTarget(args) ||
+        typeof args.body !== 'string' ||
+        (args.expectedBody !== null && typeof args.expectedBody !== 'string')
+      ) {
+        return invalidInput('Invalid work record update.')
+      }
+      return saveObsidianDailyWorkRecordToNote(args)
+    }
+  )
+}
+
+function hasValidTodoTarget(
+  args: ObsidianDailyTodoTextUpdate | ObsidianDailyWorkRecordSaveInput
+): boolean {
+  return Boolean(
+    args &&
+    typeof args.directory === 'string' &&
+    typeof args.filePath === 'string' &&
+    args.todo &&
+    typeof args.todo.rawLine === 'string' &&
+    Number.isInteger(args.todo.lineNumber)
+  )
+}
+
+function invalidInput(message: string): Promise<{
+  ok: false
+  code: 'invalid-input'
+  message: string
+}> {
+  return Promise.resolve({ ok: false, code: 'invalid-input', message })
 }
