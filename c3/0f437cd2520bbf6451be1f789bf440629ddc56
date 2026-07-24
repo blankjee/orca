@@ -1,0 +1,71 @@
+config/electron-builder.config.cjs
+  s_42e315eba7099a::t_6a5236197eff78 12-13,57-59,147
+config/packaged-runtime-node-modules.cjs
+  s_8cf6fa83a5bc6c::t_222a7d8e621fb5 46-57,200-203,207-221,451-452
+config/scripts/electron-builder-config.test.mjs
+  s_42e315eba7099a::t_dee0a5fd8fa648 18-19,23-34,267-295,404-410
+config/scripts/verify-packaged-daemon-entry.cjs
+  s_42e315eba7099a::t_17e1c0514847a5 37-39
+src/main/index.ts
+  s_26eec17967efcd::t_c29c19d43b578c 114,259,540,769,779,1002,2329
+src/main/menu/register-app-menu.test.ts
+  s_26eec17967efcd::t_450fd17a5efb34 174,187,197
+src/main/menu/register-app-menu.ts
+  s_26eec17967efcd::t_10e5a9b8bac8b3 274
+src/main/stats/collector.ts
+  s_26eec17967efcd::t_0b69371c3fb2c0 139
+src/main/window/attach-main-window-services.ts
+  s_26eec17967efcd::t_1ddf8884061b86 4,7
+src/main/window/createMainWindow.ts
+  s_26eec17967efcd::t_8ebd8b1cdbc6b8 387,390-391,433-434,1214-1215,1217
+src/renderer/src/App.tsx
+  s_26eec17967efcd::t_84613c5be84546 110,152,1280
+src/renderer/src/components/StarNagCard.tsx
+  s_26eec17967efcd::t_51696003524220 14,142
+src/renderer/src/components/settings/Settings.tsx
+  s_26eec17967efcd::t_598a637cfd3b7f 74
+src/renderer/src/components/sidebar/SidebarSettingsHelpMenu.test.tsx
+  s_26eec17967efcd::t_666c0d024f0a10 31
+src/renderer/src/hooks/useIpcEvents.test.ts
+  s_26eec17967efcd::t_c89045c3a008be 1063,1069
+src/renderer/src/hooks/useIpcEvents.ts
+  s_26eec17967efcd::t_e6d831553852ab 1
+src/renderer/src/lib/startup-ui-hydration.ts
+  s_26eec17967efcd::t_f4112a303010e1 59
+src/renderer/src/web/web-preload-api.ts
+  s_26eec17967efcd::t_594ed27e25040c 2789-2791
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "c30f437cd2520bbf6451be1f789bf440629ddc56",
+  "prompts": {},
+  "sessions": {
+    "s_26eec17967efcd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f87de-66ab-7490-adbf-47b38ab3cb86",
+        "model": "unknown"
+      },
+      "human_author": "huangjie.sc <huangjie.sc@bytedance.com>"
+    },
+    "s_42e315eba7099a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f6aba-0d23-7960-b887-9b70a842fd1f",
+        "model": "unknown"
+      },
+      "human_author": "huangjie.sc <huangjie.sc@bytedance.com>"
+    },
+    "s_8cf6fa83a5bc6c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f87d7-20ee-72a2-8cd5-a1534315ab6c",
+        "model": "unknown"
+      },
+      "human_author": "huangjie.sc <huangjie.sc@bytedance.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
