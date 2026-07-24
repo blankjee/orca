@@ -1,0 +1,99 @@
+src/main/ipc/obsidian-daily-todos.ts
+  s_8cf6fa83a5bc6c::t_ae2635aa6cdd2f 6-8,15-16,62-101
+src/main/obsidian-daily-todo-service.test.ts
+  s_8cf6fa83a5bc6c::t_864e32f8a917c9 9-11,80-127
+src/main/obsidian-daily-todo-service.ts
+  s_8cf6fa83a5bc6c::t_334c2fb46cc51c 14-23,89-149,181,198,264-272
+src/preload/api-types.ts
+  s_26eec17967efcd::t_8abe295b538d9d 59-60,2262-2263
+src/preload/index.ts
+  s_26eec17967efcd::t_476ce7ecfc58a9 107-108,195-196,2230-2234
+src/renderer/src/assets/main.css
+  s_42e315eba7099a::t_e5afc2e009d34b 104-110,165-173,260-266
+src/renderer/src/components/ObsidianDailyTodoPanel.tsx
+  s_8cf6fa83a5bc6c::t_6c66ad497496ff 15-17,19-23,46-50,88-112,120-121,125-137,207-231,233-262,264-329
+src/renderer/src/components/ObsidianTodoAgentLaunchDialog.tsx
+  s_42e315eba7099a::t_135ee5cb458432 1-399
+src/renderer/src/components/obsidian-daily-date-header.tsx
+  s_42e315eba7099a::t_00705806b68ab7 1-196
+src/renderer/src/components/obsidian-daily-date-navigation.test.ts
+  s_42e315eba7099a::t_0bb16852572b64 1-40
+src/renderer/src/components/obsidian-daily-date-navigation.ts
+  s_42e315eba7099a::t_938bfdb030611f 1-61
+src/renderer/src/components/obsidian-daily-note-picker.tsx
+  s_42e315eba7099a::t_4d061c5cc0ff85 1-2,4,6-12,14,26,28-32,34,39-40,42-54,56-57,60-91
+src/renderer/src/components/obsidian-daily-todo-list.test.tsx
+  s_8cf6fa83a5bc6c::t_11f61512adccb2 1-98
+src/renderer/src/components/obsidian-daily-todo-list.tsx
+  s_8cf6fa83a5bc6c::t_39ed13b94f3a02 2-11,14,17,25,31-32,34-38,41-42,44,46-48,51-52,56-58,60,62-64,73-75,77-81,84-86,88,90-92,95-98,103,105,108-117,121-133,135-146,153-199,203-208,212-213,215-217,220-230,233-239,254,266-304,310-366,383-406
+src/renderer/src/components/obsidian-daily-todo-overview.tsx
+  s_42e315eba7099a::t_a3e1c5e9df4934 1-229
+src/renderer/src/components/obsidian-daily-todo-panel-content.tsx
+  s_8cf6fa83a5bc6c::t_8134827ac448fe 2,14,20-21,23-28,39-41,49-50,55-57,67-69,77-78,82-85,89-96,107,111-116,118-127,138-139,141,143-145,147-148,159-208,286,302-307,314-315,331-346
+src/renderer/src/components/obsidian-daily-todo-presentation.test.ts
+  s_42e315eba7099a::t_a241d98a5cd931 5,8-9,58-76
+src/renderer/src/components/obsidian-daily-todo-presentation.ts
+  s_42e315eba7099a::t_15530f4a4689ea 18-29,73-96
+src/renderer/src/components/obsidian-daily-work-record-sheet.tsx
+  s_8cf6fa83a5bc6c::t_2886862cfb6d32 1-88
+src/renderer/src/i18n/locales/en.json
+  s_26eec17967efcd::t_fe00553a903b91 13057-13075,13080-13087,13092-13127
+src/renderer/src/i18n/locales/es.json
+  s_26eec17967efcd::t_ef2bb3c62e7d05 13057-13075,13080-13087,13092-13127
+src/renderer/src/i18n/locales/ja.json
+  s_26eec17967efcd::t_5b4bb0c9fac6b7 13057-13075,13080-13087,13092-13127
+src/renderer/src/i18n/locales/ko.json
+  s_26eec17967efcd::t_a8336f10c98c8c 13057-13075,13080-13087,13092-13127
+src/renderer/src/i18n/locales/zh.json
+  s_26eec17967efcd::t_87636ae22fbff3 13057-13075,13080-13087,13092-13127
+src/renderer/src/lib/obsidian-todo-agent-launch.test.ts
+  s_42e315eba7099a::t_f6e769dc281c5c 1-191
+src/renderer/src/lib/obsidian-todo-agent-launch.ts
+  s_42e315eba7099a::t_22dce3f916d30a 1-135
+src/shared/obsidian-daily-todo-insertion.ts
+  s_8cf6fa83a5bc6c::t_798ce26c03553a 1-95
+src/shared/obsidian-daily-todo-text.ts
+  s_8cf6fa83a5bc6c::t_63c096fb862a1b 1-34
+src/shared/obsidian-daily-todo.test.ts
+  s_26eec17967efcd::t_f6497e83492612 8,62-76
+src/shared/obsidian-daily-todo.ts
+  s_8cf6fa83a5bc6c::t_08f3e11c543aa2 37,84,97-111,185,250
+src/shared/obsidian-daily-work-record.test.ts
+  s_8cf6fa83a5bc6c::t_bc5d1a0e010c5c 1-62
+src/shared/obsidian-daily-work-record.ts
+  s_8cf6fa83a5bc6c::t_e390f798f64de2 1-172
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "f9c872d3f00d1b8dbe15dbfebf0b31b4522add4e",
+  "prompts": {},
+  "sessions": {
+    "s_26eec17967efcd": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f87de-66ab-7490-adbf-47b38ab3cb86",
+        "model": "unknown"
+      },
+      "human_author": "huangjie.sc <huangjie.sc@bytedance.com>"
+    },
+    "s_42e315eba7099a": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f6aba-0d23-7960-b887-9b70a842fd1f",
+        "model": "unknown"
+      },
+      "human_author": "huangjie.sc <huangjie.sc@bytedance.com>"
+    },
+    "s_8cf6fa83a5bc6c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f87d7-20ee-72a2-8cd5-a1534315ab6c",
+        "model": "unknown"
+      },
+      "human_author": "huangjie.sc <huangjie.sc@bytedance.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
