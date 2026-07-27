@@ -58,4 +58,22 @@ describe('ObsidianDailyTodoInputMonitor', () => {
     expect(callback).not.toHaveBeenCalled()
     monitor.stop()
   })
+
+  it('surfaces accessibility failures instead of silently appearing active', async () => {
+    vi.mocked(readObsidianDailyTodoAxSnapshot).mockRejectedValue(
+      new Error('macOS blocked Todo monitoring: assistive access is not allowed')
+    )
+    const callback = vi.fn()
+    const errorCallback = vi.fn()
+    const monitor = new ObsidianDailyTodoInputMonitor()
+
+    monitor.start(callback, errorCallback)
+    await vi.advanceTimersByTimeAsync(450)
+
+    expect(callback).not.toHaveBeenCalled()
+    expect(errorCallback).toHaveBeenCalledWith(
+      'macOS blocked Todo monitoring: assistive access is not allowed'
+    )
+    monitor.stop()
+  })
 })

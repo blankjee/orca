@@ -9,19 +9,29 @@ class FakeInputMonitor {
   isRunning = false
   private callback: ((event: ObsidianDailyTodoInputMonitorEvent) => void | Promise<void>) | null =
     null
+  private errorCallback: ((message: string) => void) | null = null
 
-  start(callback: (event: ObsidianDailyTodoInputMonitorEvent) => void | Promise<void>): void {
+  start(
+    callback: (event: ObsidianDailyTodoInputMonitorEvent) => void | Promise<void>,
+    errorCallback?: (message: string) => void
+  ): void {
     this.isRunning = true
     this.callback = callback
+    this.errorCallback = errorCallback ?? null
   }
 
   stop(): void {
     this.isRunning = false
     this.callback = null
+    this.errorCallback = null
   }
 
   async emit(event: ObsidianDailyTodoInputMonitorEvent): Promise<void> {
     await this.callback?.(event)
+  }
+
+  fail(message: string): void {
+    this.errorCallback?.(message)
   }
 }
 
@@ -52,6 +62,31 @@ function buildCandidate(id: string, title: string, sourceText: string): Obsidian
 }
 
 describe('ObsidianDailyTodoCandidateMonitorController', () => {
+  it('stops and reports a fatal accessibility failure', () => {
+    const monitor = new FakeInputMonitor()
+    const send = vi.fn()
+    const controller = new ObsidianDailyTodoCandidateMonitorController(
+      {
+        list: vi.fn(),
+        analyzeText: vi.fn()
+      },
+      { monitor }
+    )
+    controller.start(
+      { directory: '/tmp/obsidian-monitor-test', filePath: '/tmp/obsidian-monitor-test/note.md' },
+      { send } as unknown as WebContents
+    )
+
+    monitor.fail('macOS blocked Todo monitoring: assistive access is not allowed')
+
+    expect(controller.status()).toEqual({ ok: true, running: false })
+    expect(send).toHaveBeenCalledWith(
+      'obsidianDailyTodos:candidates:monitorError',
+      'macOS blocked Todo monitoring: assistive access is not allowed',
+      true
+    )
+  })
+
   it('immediately analyzes captured text without requiring action keywords', async () => {
     const monitor = new FakeInputMonitor()
     const sourceText = '客服后台没有记录，住宿推翻和到无的订单需要确认归因。'

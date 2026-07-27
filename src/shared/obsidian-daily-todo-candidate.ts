@@ -129,7 +129,11 @@ export type ObsidianDailyTodoCandidateMonitorStartInput = {
 
 export type ObsidianDailyTodoCandidateMonitorStatusResult =
   | { ok: true; running: boolean }
-  | { ok: false; code: 'invalid-input'; message: string }
+  | {
+      ok: false
+      code: 'invalid-input' | 'accessibility-permission-required'
+      message: string
+    }
 
 export function isObsidianDailyTodoCandidatePriority(
   value: unknown

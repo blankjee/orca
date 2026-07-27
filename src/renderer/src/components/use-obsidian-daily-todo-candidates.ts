@@ -111,8 +111,11 @@ export function useObsidianDailyTodoCandidates({
   }, [loadCandidates])
 
   useEffect(() => {
-    return window.api.obsidianDailyTodos.candidates.onMonitorError((message) => {
+    return window.api.obsidianDailyTodos.candidates.onMonitorError((message, fatal) => {
       setCandidateError(message)
+      if (fatal) {
+        setListeningForCandidatesState(false)
+      }
       setMonitorActivity((current) => (current ? { ...current, status: 'error' } : current))
     })
   }, [])

@@ -2331,7 +2331,7 @@ export type PreloadApi = {
       stopMonitor: () => Promise<ObsidianDailyTodoCandidateMonitorStatusResult>
       monitorStatus: () => Promise<ObsidianDailyTodoCandidateMonitorStatusResult>
       onChanged: (callback: (event?: ObsidianDailyTodoCandidateChangedEvent) => void) => () => void
-      onMonitorError: (callback: (message: string) => void) => () => void
+      onMonitorError: (callback: (message: string, fatal?: boolean) => void) => () => void
     }
   }
   skills: {

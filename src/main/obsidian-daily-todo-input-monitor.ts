@@ -19,12 +19,13 @@ export type ObsidianDailyTodoInputMonitorEvent = {
 }
 
 type InputCallback = (event: ObsidianDailyTodoInputMonitorEvent) => void | Promise<void>
+type ErrorCallback = (message: string) => void
 
-const POLL_INTERVAL_MS = 750
+const POLL_INTERVAL_MS = 400
 const MIN_TEXT_LEN = 2
 const MAX_VALUE_LEN = 8000
 const BROWSER_MIN_DWELL_MS = 30_000
-const STABLE_CAPTURE_MS = 900
+const STABLE_CAPTURE_MS = 650
 const IGNORED_BUNDLE_IDS = new Set(['com.stablyai.orca'])
 
 const BROWSER_BUNDLE_IDS = new Set([
@@ -89,6 +90,7 @@ export class ObsidianDailyTodoInputMonitor {
   private timer: NodeJS.Timeout | null = null
   private polling = false
   private callback: InputCallback | null = null
+  private errorCallback: ErrorCallback | null = null
   private lastSnapshot: ObsidianDailyTodoAxSnapshot | null = null
   private lastNonEmptyValue = ''
   private valueOnFocusEnter = ''
@@ -102,12 +104,14 @@ export class ObsidianDailyTodoInputMonitor {
     return this.started
   }
 
-  start(callback: InputCallback): void {
+  start(callback: InputCallback, errorCallback?: ErrorCallback): void {
     if (this.started) {
       this.callback = callback
+      this.errorCallback = errorCallback ?? null
       return
     }
     this.callback = callback
+    this.errorCallback = errorCallback ?? null
     this.started = true
     this.timer = setInterval(() => {
       void this.tick()
@@ -124,6 +128,7 @@ export class ObsidianDailyTodoInputMonitor {
     }
     this.timer = null
     this.callback = null
+    this.errorCallback = null
     this.started = false
     if (this.stableTimer) {
       clearTimeout(this.stableTimer)
@@ -167,6 +172,9 @@ export class ObsidianDailyTodoInputMonitor {
         return
       }
       this.handleSnapshot(snapshot)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'macOS Todo monitoring failed.'
+      this.errorCallback?.(message)
     } finally {
       this.polling = false
     }

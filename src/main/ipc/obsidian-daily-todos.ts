@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { ipcMain, systemPreferences } from 'electron'
 
 import {
   addObsidianDailyTodoToNote,
@@ -179,6 +179,14 @@ export function registerObsidianDailyTodoHandlers(store: Pick<Store, 'getSetting
           ok: false as const,
           code: 'invalid-input' as const,
           message: 'Invalid monitor input.'
+        }
+      }
+      if (process.platform === 'darwin' && !systemPreferences.isTrustedAccessibilityClient(false)) {
+        return {
+          ok: false as const,
+          code: 'accessibility-permission-required' as const,
+          message:
+            'Todo 监听需要 macOS 辅助功能权限。请在“系统设置 → 隐私与安全性 → 辅助功能”中允许 Orca，然后重新开启监听。'
         }
       }
       return candidateMonitor.start(args, event.sender)

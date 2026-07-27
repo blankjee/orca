@@ -53,7 +53,10 @@ export class ObsidianDailyTodoCandidateMonitorController {
     }
     this.target = input
     this.webContents = webContents
-    this.monitor.start((event) => this.handleInputEvent(event))
+    this.monitor.start(
+      (event) => this.handleInputEvent(event),
+      (message) => this.handleMonitorError(message)
+    )
     return { ok: true, running: true }
   }
 
@@ -70,6 +73,14 @@ export class ObsidianDailyTodoCandidateMonitorController {
 
   status(): ObsidianDailyTodoCandidateMonitorStatusResult {
     return { ok: true, running: this.monitor.isRunning }
+  }
+
+  private handleMonitorError(message: string): void {
+    // Why: a TCC denial is fatal for accessibility polling; leaving the toggle
+    // active would claim monitoring works while every snapshot is being discarded.
+    this.monitor.stop()
+    this.target = null
+    this.webContents?.send('obsidianDailyTodos:candidates:monitorError', message, true)
   }
 
   private async handleInputEvent(event: ObsidianDailyTodoInputMonitorEvent): Promise<void> {

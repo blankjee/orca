@@ -2353,9 +2353,12 @@ const api = {
         ipcRenderer.on('obsidianDailyTodos:candidates:changed', listener)
         return () => ipcRenderer.removeListener('obsidianDailyTodos:candidates:changed', listener)
       },
-      onMonitorError: (callback: (message: string) => void): (() => void) => {
-        const listener = (_event: Electron.IpcRendererEvent, message: string): void =>
-          callback(message)
+      onMonitorError: (callback: (message: string, fatal?: boolean) => void): (() => void) => {
+        const listener = (
+          _event: Electron.IpcRendererEvent,
+          message: string,
+          fatal?: boolean
+        ): void => callback(message, fatal)
         ipcRenderer.on('obsidianDailyTodos:candidates:monitorError', listener)
         return () =>
           ipcRenderer.removeListener('obsidianDailyTodos:candidates:monitorError', listener)

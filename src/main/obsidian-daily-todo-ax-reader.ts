@@ -8,6 +8,13 @@ export type ObsidianDailyTodoAxSnapshot = {
   value: string
 }
 
+export class ObsidianDailyTodoAxPermissionError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ObsidianDailyTodoAxPermissionError'
+  }
+}
+
 const SEP = '|@@@|'
 const TIMEOUT_MS = 3000
 let lastErrorLogAt = 0
@@ -100,16 +107,19 @@ tell application "System Events"
 		end try
 		set roleStr to ""
 		set valStr to ""
+		set fe to missing value
 		try
 			set fe to value of attribute "AXFocusedUIElement" of p
 			set roleStr to my getRole(fe)
 		end try
+		-- Why: chat composers sit near the end of large accessibility trees.
+		-- Reading the focused subtree first prevents a long Feishu thread from hiding typed text.
 		try
-			set valStr to my collectText(front window of p, 320, 8000)
+			if fe is not missing value then set valStr to my collectText(fe, 80, 8000)
 		end try
 		if valStr is "" then
 			try
-				set valStr to my collectText(fe, 160, 8000)
+				set valStr to my collectText(front window of p, 320, 8000)
 			end try
 		end if
 		return bid & sep & pname & sep & winTitle & sep & roleStr & sep & valStr
@@ -119,7 +129,7 @@ tell application "System Events"
 end tell`
 
 export function readObsidianDailyTodoAxSnapshot(): Promise<ObsidianDailyTodoAxSnapshot | null> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const child = execFile(
       '/usr/bin/osascript',
       ['-e', SCRIPT],
@@ -144,6 +154,16 @@ export function readObsidianDailyTodoAxSnapshot(): Promise<ObsidianDailyTodoAxSn
         const parts = raw.split(SEP)
         if (parts.length < 5) {
           resolve(null)
+          return
+        }
+        if (parts[0] === 'ERROR') {
+          const errorNumber = parts[1] || 'unknown'
+          const detail = parts[2] || 'System Events could not read the active app.'
+          reject(
+            new ObsidianDailyTodoAxPermissionError(
+              `macOS blocked Todo monitoring (${errorNumber}): ${detail}`
+            )
+          )
           return
         }
         resolve({
