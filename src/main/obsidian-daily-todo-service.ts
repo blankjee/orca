@@ -88,9 +88,22 @@ export async function addObsidianDailyTodoToNote(
 ): Promise<ObsidianDailyTodoResult> {
   try {
     validateObsidianDailyTodoText(input.text)
+    if (input.workRecordBody) {
+      validateObsidianDailyWorkRecordBody(input.workRecordBody)
+    }
     const target = await resolveRequestedNote(input.directory, input.filePath, now)
     const markdown = await readObsidianDailyTodoMarkdown(target.filePath)
-    await writeObsidianDailyTodoMarkdown(target.filePath, addObsidianDailyTodo(markdown, input))
+    const withTodo = addObsidianDailyTodo(markdown, input)
+    const updated = input.workRecordBody
+      ? saveObsidianDailyWorkRecord(withTodo, input.text.trim(), input.workRecordBody, null)
+      : withTodo
+    if (updated === null) {
+      throw new ObsidianDailyTodoServiceError(
+        'todo-conflict',
+        'A work record for this Todo already exists.'
+      )
+    }
+    await writeObsidianDailyTodoMarkdown(target.filePath, updated)
     return {
       ok: true,
       snapshot: await readSnapshot(input.directory, target.filePath, now)

@@ -1,10 +1,18 @@
-import { isObsidianDailyTodoCandidatePriority } from '../shared/obsidian-daily-todo-candidate'
+import {
+  isObsidianDailyTodoCandidateImageMimeType,
+  OBSIDIAN_DAILY_TODO_CANDIDATE_IMAGE_MAX_BYTES
+} from '../shared/obsidian-daily-todo-candidate'
 import type { ObsidianDailyTodoItem } from '../shared/obsidian-daily-todo'
 import type {
-  ObsidianDailyTodoCandidate,
   ObsidianDailyTodoCandidateAnalyzeInput,
   ObsidianDailyTodoCandidateAnalyzeResult
 } from '../shared/obsidian-daily-todo-candidate'
+import {
+  extractResponseText,
+  parseCandidateResponse
+} from './obsidian-daily-todo-candidate-response'
+
+export { parseCandidateResponse } from './obsidian-daily-todo-candidate-response'
 
 export type ObsidianDailyTodoCandidateAnalyzerConfig = {
   endpoint: string
@@ -19,22 +27,20 @@ export type ObsidianDailyTodoCandidateAnalyzerOptions = {
   timeoutMs?: number
 }
 
-type LlmCandidate = {
-  title?: unknown
-  context?: unknown
-  confidence?: unknown
-  priority?: unknown
-  dueText?: unknown
-  suggestedMergeTodoId?: unknown
-}
-
-const DEFAULT_TIMEOUT_MS = 20_000
-const DEFAULT_GROUP = '今日任务'
+const DEFAULT_TIMEOUT_MS = 35_000
 const ARK_RESPONSES_PATH = '/responses'
-const MAX_SOURCE_TEXT_LENGTH = 500
-const MAX_EXISTING_TODOS = 3
-const SYSTEM_PROMPT =
-  '你是待办提取器。含“提醒我/提示我/记得/帮我记/下周/明天/今天”的句子必须生成待办。最多3条。只返回JSON：{"candidates":[{"title":"...","context":"...","confidence":0.9,"priority":"P2","dueText":"optional"}]}。无markdown。'
+const MAX_SOURCE_TEXT_LENGTH = 8_000
+const MAX_EXISTING_TODOS = 8
+const SYSTEM_PROMPT = `你是一个严谨的工作任务分析器。阅读粘贴的聊天记录、普通文字或截图，提取真正需要执行和跟进的事项。
+规则：
+1. 最多输出 5 条相互独立的任务；对同一问题的多轮讨论应合并成一条。
+2. title 使用清晰的“动作 + 对象”表达，不把聊天原句、账号、寒暄或纯背景当成任务。
+3. 从上下文提取 goal、background、expectedOutcome、assignee、dueText、keyPoints、uncertainties。没有明确证据时留空，绝不编造。
+4. dueText 保留原文中的相对或绝对时间（如“今天”“下周一 16:00”），不要自行换算日期。
+5. expectedOutcome 描述可验收的结果；uncertainties 记录需要确认的缺失信息、风险或口径。
+6. 截图需先理解其中的界面文字、发言人、@关系和上下文，再判断责任人和行动项。
+7. “提醒我/提示我/记得/帮我记/今天/明天/下周”等明确行动信号必须生成候选任务。
+只返回 JSON，不要 Markdown：{"candidates":[{"title":"...","context":"一句话任务理解","goal":"...","background":"...","expectedOutcome":"...","assignee":"...","dueText":"...","keyPoints":["..."],"uncertainties":["..."],"confidence":0.9,"priority":"P2"}]}`
 
 export class ObsidianDailyTodoCandidateAnalyzer {
   private readonly fetchImpl: typeof fetch
@@ -60,7 +66,8 @@ export class ObsidianDailyTodoCandidateAnalyzer {
     input: ObsidianDailyTodoCandidateAnalyzeInput
   ): Promise<ObsidianDailyTodoCandidateAnalyzeResult> {
     const sourceText = input.sourceText.trim()
-    if (!input.directory.trim() || !input.filePath.trim() || !sourceText) {
+    const sourceImage = normalizeSourceImage(input.sourceImage)
+    if (!input.directory.trim() || !input.filePath.trim() || (!sourceText && !sourceImage)) {
       return { ok: false, code: 'invalid-input', message: 'Invalid candidate analysis input.' }
     }
     if (!this.isConfigured) {
@@ -85,11 +92,16 @@ export class ObsidianDailyTodoCandidateAnalyzer {
             },
             {
               role: 'user',
-              content: [{ type: 'input_text', text: buildUserPrompt(input, sourceText) }]
+              content: [
+                { type: 'input_text', text: buildUserPrompt(input, sourceText) },
+                ...(sourceImage
+                  ? [{ type: 'input_image', image_url: sourceImage.dataUrl, detail: 'high' }]
+                  : [])
+              ]
             }
           ],
           temperature: 0.1,
-          max_output_tokens: 240
+          max_output_tokens: 1_200
         }),
         signal: controller.signal
       })
@@ -102,7 +114,8 @@ export class ObsidianDailyTodoCandidateAnalyzer {
       }
       const raw = extractResponseText(await response.json())
       const candidates = parseCandidateResponse(raw, {
-        sourceText,
+        sourceText: sourceText || '粘贴的图片',
+        sourceKind: sourceImage ? (sourceText ? 'mixed' : 'image') : 'text',
         sourceApp: input.sourceApp,
         now: this.now(),
         confidenceThreshold: this.config.confidenceThreshold
@@ -128,91 +141,6 @@ function buildRequestUrl(endpoint: string): string {
   return trimmed.endsWith(ARK_RESPONSES_PATH) ? trimmed : `${trimmed}${ARK_RESPONSES_PATH}`
 }
 
-function extractResponseText(data: unknown): string {
-  if (!data || typeof data !== 'object') {
-    return ''
-  }
-  const record = data as {
-    output_text?: unknown
-    choices?: { message?: { content?: unknown } }[]
-    output?: { content?: { text?: unknown; type?: unknown }[] }[]
-  }
-  if (typeof record.output_text === 'string') {
-    return record.output_text
-  }
-  const choiceContent = record.choices?.[0]?.message?.content
-  if (typeof choiceContent === 'string') {
-    return choiceContent
-  }
-  const outputText = record.output
-    ?.flatMap((item) => item.content ?? [])
-    .map((content) => content.text)
-    .find((text): text is string => typeof text === 'string')
-  return outputText ?? ''
-}
-
-export function parseCandidateResponse(
-  raw: string,
-  options: {
-    sourceText: string
-    sourceApp?: string
-    now: number
-    confidenceThreshold: number
-  }
-): ObsidianDailyTodoCandidate[] {
-  const chunk = extractJsonChunk(raw)
-  if (!chunk) {
-    return buildReminderFallback(options)
-  }
-  const parsed = safeParseJson(chunk)
-  const items = Array.isArray(parsed)
-    ? parsed
-    : parsed &&
-        typeof parsed === 'object' &&
-        Array.isArray((parsed as { candidates?: unknown }).candidates)
-      ? (parsed as { candidates: unknown[] }).candidates
-      : []
-  const candidates = items
-    .map((item, index) => normalizeCandidate(item, index, options))
-    .filter((candidate): candidate is ObsidianDailyTodoCandidate => Boolean(candidate))
-  return candidates.length > 0 ? candidates : buildReminderFallback(options)
-}
-
-function buildReminderFallback(options: {
-  sourceText: string
-  sourceApp?: string
-  now: number
-  confidenceThreshold: number
-}): ObsidianDailyTodoCandidate[] {
-  const title = extractReminderTitle(options.sourceText)
-  if (!title) {
-    return []
-  }
-  return [
-    {
-      id: `candidate-${options.now}-fallback`,
-      title,
-      context: '从提醒语句提取',
-      sourceText: options.sourceText,
-      sourceApp: options.sourceApp,
-      confidence: Math.max(0.85, options.confidenceThreshold),
-      priority: 'P2',
-      group: DEFAULT_GROUP,
-      createdAt: options.now,
-      status: 'pending'
-    }
-  ]
-}
-
-function extractReminderTitle(sourceText: string): string | null {
-  const text = sourceText.trim().replace(/[。.!！?？]+$/u, '')
-  const matched = text.match(
-    /^(?:请)?(?:提醒我|提示我|记得|帮我记(?:一下)?|帮我提醒(?:一下)?)(?:一下)?(?<title>.+)$/u
-  )
-  const title = matched?.groups?.title?.trim() ?? ''
-  return title ? title.slice(0, 120) : null
-}
-
 function buildUserPrompt(
   input: ObsidianDailyTodoCandidateAnalyzeInput,
   sourceText: string
@@ -220,96 +148,40 @@ function buildUserPrompt(
   const existingTodos =
     (input.existingTodos ?? []).slice(0, MAX_EXISTING_TODOS).map(formatExistingTodo).join('\n') ||
     'none'
-  return `Existing:
+  const sourceDescription = input.sourceImage
+    ? sourceText
+      ? '下方文字和所附截图属于同一份上下文，请结合分析。'
+      : '请分析所附截图中的聊天或工作内容。'
+    : '请分析下方文字。'
+  return `${sourceDescription}
+Existing pending Todos:
 ${existingTodos}
-Text:
-${sourceText.slice(0, MAX_SOURCE_TEXT_LENGTH)}`
+Pasted text:
+${sourceText.slice(0, MAX_SOURCE_TEXT_LENGTH) || '(none)'}`
 }
 
 function formatExistingTodo(todo: ObsidianDailyTodoItem): string {
   return `- ${todo.text.slice(0, 60)}`
 }
 
-function normalizeCandidate(
-  value: unknown,
-  index: number,
-  options: {
-    sourceText: string
-    sourceApp?: string
-    now: number
-    confidenceThreshold: number
+function normalizeSourceImage(
+  value: ObsidianDailyTodoCandidateAnalyzeInput['sourceImage']
+): ObsidianDailyTodoCandidateAnalyzeInput['sourceImage'] | undefined {
+  if (
+    !value ||
+    !isObsidianDailyTodoCandidateImageMimeType(value.mimeType) ||
+    typeof value.dataUrl !== 'string'
+  ) {
+    return undefined
   }
-): ObsidianDailyTodoCandidate | null {
-  if (!value || typeof value !== 'object') {
-    return null
+  const prefix = `data:${value.mimeType};base64,`
+  if (!value.dataUrl.startsWith(prefix)) {
+    return undefined
   }
-  const item = value as LlmCandidate
-  const title = typeof item.title === 'string' ? item.title.trim() : ''
-  if (!title) {
-    return null
+  const base64Length = value.dataUrl.length - prefix.length
+  const estimatedBytes = Math.floor((base64Length * 3) / 4)
+  if (estimatedBytes <= 0 || estimatedBytes > OBSIDIAN_DAILY_TODO_CANDIDATE_IMAGE_MAX_BYTES) {
+    return undefined
   }
-  const confidence = normalizeConfidence(item.confidence)
-  if (confidence < options.confidenceThreshold) {
-    return null
-  }
-  const context =
-    typeof item.context === 'string' && item.context.trim()
-      ? item.context.trim()
-      : 'From pasted text'
-  const priority = isObsidianDailyTodoCandidatePriority(item.priority) ? item.priority : undefined
-  const dueText =
-    typeof item.dueText === 'string' && item.dueText.trim() ? item.dueText.trim() : undefined
-  const suggestedMergeTodoId =
-    typeof item.suggestedMergeTodoId === 'string' && item.suggestedMergeTodoId.trim()
-      ? item.suggestedMergeTodoId.trim()
-      : undefined
-  return {
-    id: `candidate-${options.now}-${index}`,
-    title: title.slice(0, 120),
-    context,
-    sourceText: options.sourceText,
-    sourceApp: options.sourceApp,
-    confidence,
-    priority,
-    dueText,
-    group: DEFAULT_GROUP,
-    createdAt: options.now,
-    status: 'pending',
-    suggestedMergeTodoId
-  }
-}
-
-function normalizeConfidence(value: unknown): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return 0.8
-  }
-  return Math.max(0, Math.min(1, value))
-}
-
-function extractJsonChunk(raw: string): string | null {
-  const trimmed = raw.trim()
-  if (!trimmed) {
-    return null
-  }
-  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i)
-  const candidate = fenced ? fenced[1].trim() : trimmed
-  const objectStart = candidate.indexOf('{')
-  const arrayStart = candidate.indexOf('[')
-  const starts = [objectStart, arrayStart].filter((index) => index >= 0)
-  if (starts.length === 0) {
-    return null
-  }
-  const start = Math.min(...starts)
-  const end = candidate.startsWith('[', start)
-    ? candidate.lastIndexOf(']')
-    : candidate.lastIndexOf('}')
-  return end > start ? candidate.slice(start, end + 1) : null
-}
-
-function safeParseJson(raw: string): unknown {
-  try {
-    return JSON.parse(raw)
-  } catch {
-    return null
-  }
+  return value
 }

@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-
 import { translate } from '@/i18n/i18n'
 import {
   buildObsidianDailyNoteUrl,
@@ -34,9 +33,7 @@ type ObsidianDailyTodoPanelProps = {
   vault: string
   onSaveDirectory: (directory: string) => Promise<void>
 }
-
 type TodoPriority = 'P1' | 'P2' | 'P3'
-
 export function ObsidianDailyTodoPanel({
   directory,
   vault,
@@ -134,11 +131,13 @@ export function ObsidianDailyTodoPanel({
 
   const {
     candidateSourceText,
+    candidateSourceImage,
     candidates,
     candidateError,
     busyCandidateIds,
     listeningForCandidates,
     setCandidateSourceText,
+    setCandidateSourceImage,
     setListeningForCandidates,
     analyzeCandidates,
     acceptCandidate,
@@ -333,6 +332,7 @@ export function ObsidianDailyTodoPanel({
         draft={draft}
         priority={priority}
         candidateSourceText={candidateSourceText}
+        candidateSourceImage={candidateSourceImage}
         candidateAnalyzing={candidateAnalyzing}
         candidateBusyIds={busyCandidateIds}
         candidateErrorMessage={candidateError}
@@ -368,6 +368,7 @@ export function ObsidianDailyTodoPanel({
         onPriorityChange={setPriority}
         onAdd={() => void addTodo()}
         onCandidateSourceTextChange={setCandidateSourceText}
+        onCandidateSourceImageChange={setCandidateSourceImage}
         onListeningForCandidatesChange={setListeningForCandidates}
         onAnalyzeCandidates={() => {
           setCandidateAnalyzing(true)
@@ -399,11 +400,13 @@ export function ObsidianDailyTodoPanel({
         setCandidateSheetOpen={setCandidateSheetOpen}
         candidates={candidates}
         candidateSourceText={candidateSourceText}
+        candidateSourceImage={candidateSourceImage}
         candidateAnalyzing={candidateAnalyzing}
         listeningForCandidates={listeningForCandidates}
         candidateBusyIds={busyCandidateIds}
         candidateError={candidateError}
         setCandidateSourceText={setCandidateSourceText}
+        setCandidateSourceImage={setCandidateSourceImage}
         setListeningForCandidates={setListeningForCandidates}
         onAnalyzeCandidates={() => {
           setCandidateAnalyzing(true)

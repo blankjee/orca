@@ -6,7 +6,8 @@ import type { ObsidianDailyTodoSnapshot } from '../../../shared/obsidian-daily-t
 import type {
   ObsidianDailyTodoCandidate,
   ObsidianDailyTodoCandidateAnalyzeResult,
-  ObsidianDailyTodoCandidateMutationResult
+  ObsidianDailyTodoCandidateMutationResult,
+  ObsidianDailyTodoCandidateSourceImage
 } from '../../../shared/obsidian-daily-todo-candidate'
 
 type TodoPriority = 'P1' | 'P2' | 'P3'
@@ -25,11 +26,13 @@ export function useObsidianDailyTodoCandidates({
   onSnapshot
 }: UseObsidianDailyTodoCandidatesArgs): {
   candidateSourceText: string
+  candidateSourceImage: ObsidianDailyTodoCandidateSourceImage | null
   candidates: ObsidianDailyTodoCandidate[]
   candidateError: string | null
   busyCandidateIds: Set<string>
   listeningForCandidates: boolean
   setCandidateSourceText: (value: string) => void
+  setCandidateSourceImage: (value: ObsidianDailyTodoCandidateSourceImage | null) => void
   setListeningForCandidates: (value: boolean) => void
   analyzeCandidates: () => Promise<void>
   acceptCandidate: (
@@ -39,6 +42,8 @@ export function useObsidianDailyTodoCandidates({
   dismissCandidate: (candidate: ObsidianDailyTodoCandidate) => Promise<void>
 } {
   const [candidateSourceText, setCandidateSourceText] = useState('')
+  const [candidateSourceImage, setCandidateSourceImage] =
+    useState<ObsidianDailyTodoCandidateSourceImage | null>(null)
   const [candidates, setCandidates] = useState<ObsidianDailyTodoCandidate[]>([])
   const [candidateError, setCandidateError] = useState<string | null>(null)
   const [busyCandidateIds, setBusyCandidateIds] = useState<Set<string>>(new Set())
@@ -105,7 +110,7 @@ export function useObsidianDailyTodoCandidates({
   const analyzeCandidates = async (): Promise<void> => {
     const filePath = snapshot?.filePath
     const sourceText = candidateSourceText.trim()
-    if (!filePath || !sourceText || candidateAnalyzing) {
+    if (!filePath || (!sourceText && !candidateSourceImage) || candidateAnalyzing) {
       return
     }
     setCandidateError(null)
@@ -113,11 +118,13 @@ export function useObsidianDailyTodoCandidates({
       directory,
       filePath,
       sourceText,
+      sourceImage: candidateSourceImage ?? undefined,
       existingTodos: snapshot?.todos ?? []
     })
     applyCandidateAnalyzeResult(result, setCandidates, setCandidateError)
     if (result.ok && result.candidates.length > 0) {
       setCandidateSourceText('')
+      setCandidateSourceImage(null)
     } else if (result.ok) {
       setCandidateError(
         translate(
@@ -222,11 +229,13 @@ export function useObsidianDailyTodoCandidates({
 
   return {
     candidateSourceText,
+    candidateSourceImage,
     candidates,
     candidateError,
     busyCandidateIds,
     listeningForCandidates,
     setCandidateSourceText,
+    setCandidateSourceImage,
     setListeningForCandidates,
     analyzeCandidates,
     acceptCandidate,

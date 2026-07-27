@@ -8,18 +8,23 @@ import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import type {
   ObsidianDailyTodoCandidate,
-  ObsidianDailyTodoCandidatePriority
+  ObsidianDailyTodoCandidatePriority,
+  ObsidianDailyTodoCandidateSourceImage
 } from '../../../shared/obsidian-daily-todo-candidate'
+import { ObsidianDailyTodoCandidateDetails } from './obsidian-daily-todo-candidate-details'
+import { ObsidianDailyTodoCandidateSourceInput } from './obsidian-daily-todo-candidate-source-input'
 
 type ObsidianDailyTodoCandidatePanelProps = {
   candidates: readonly ObsidianDailyTodoCandidate[]
   sourceText: string
+  sourceImage: ObsidianDailyTodoCandidateSourceImage | null
   analyzing: boolean
   listening: boolean
   busyCandidateIds: ReadonlySet<string>
   disabled: boolean
   errorMessage: string | null
   onSourceTextChange: (value: string) => void
+  onSourceImageChange: (value: ObsidianDailyTodoCandidateSourceImage | null) => void
   onListeningChange: (value: boolean) => void
   onAnalyze: () => void
   onAccept: (candidate: ObsidianDailyTodoCandidate, overrides: CandidateOverrides) => void
@@ -35,12 +40,14 @@ type CandidateOverrides = {
 export function ObsidianDailyTodoCandidatePanel({
   candidates,
   sourceText,
+  sourceImage,
   analyzing,
   listening,
   busyCandidateIds,
   disabled,
   errorMessage,
   onSourceTextChange,
+  onSourceImageChange,
   onListeningChange,
   onAnalyze,
   onAccept,
@@ -177,43 +184,19 @@ export function ObsidianDailyTodoCandidatePanel({
           <Sparkles className="size-3.5" />
           {translate(
             'auto.components.ObsidianDailyTodoCandidatePanel.manualCapture',
-            'Analyze text manually'
+            'Analyze text or image'
           )}
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="space-y-2 border-t border-border p-4">
-            <textarea
-              value={sourceText}
-              onChange={(event) => onSourceTextChange(event.target.value)}
-              placeholder={translate(
-                'auto.components.ObsidianDailyTodoCandidatePanel.placeholder',
-                'Paste text to extract candidate Todos...'
-              )}
-              className="min-h-20 w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-xs outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              disabled={disabled || analyzing}
-            />
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-[11px] text-muted-foreground">
-                {translate(
-                  'auto.components.ObsidianDailyTodoCandidatePanel.safeHint',
-                  'Nothing is added until you confirm a candidate.'
-                )}
-              </span>
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                onClick={onAnalyze}
-                disabled={disabled || analyzing || !sourceText.trim()}
-              >
-                {analyzing ? <LoaderCircle className="animate-spin" /> : <Sparkles />}
-                {translate(
-                  'auto.components.ObsidianDailyTodoCandidatePanel.analyze',
-                  'Extract Todos'
-                )}
-              </Button>
-            </div>
-          </div>
+          <ObsidianDailyTodoCandidateSourceInput
+            sourceText={sourceText}
+            sourceImage={sourceImage}
+            analyzing={analyzing}
+            disabled={disabled}
+            onSourceTextChange={onSourceTextChange}
+            onSourceImageChange={onSourceImageChange}
+            onAnalyze={onAnalyze}
+          />
         </CollapsibleContent>
       </Collapsible>
     </section>
@@ -255,6 +238,7 @@ function CandidateCard({
           {candidate.context ? (
             <p className="text-[11px] text-muted-foreground">{candidate.context}</p>
           ) : null}
+          <ObsidianDailyTodoCandidateDetails candidate={candidate} />
           <details className="text-[11px] text-muted-foreground">
             <summary className="cursor-pointer">
               {translate('auto.components.ObsidianDailyTodoCandidatePanel.source', 'Original text')}

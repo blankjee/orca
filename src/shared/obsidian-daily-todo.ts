@@ -67,6 +67,7 @@ export type ObsidianDailyTodoAddInput = {
   text: string
   group?: string | null
   priority?: 'P1' | 'P2' | 'P3' | null
+  workRecordBody?: string | null
 }
 
 const TODO_LINE_PATTERN = /^(\s*)[-*]\s+\[([ xX/-])\]\s+(.+)$/

@@ -1,6 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-import { parseCandidateResponse } from './obsidian-daily-todo-candidate-analyzer'
+import {
+  ObsidianDailyTodoCandidateAnalyzer,
+  parseCandidateResponse
+} from './obsidian-daily-todo-candidate-analyzer'
 
 describe('parseCandidateResponse', () => {
   it('normalizes strict candidate JSON', () => {
@@ -10,6 +13,12 @@ describe('parseCandidateResponse', () => {
           {
             title: 'Follow up approval',
             context: 'Alice asked for confirmation',
+            goal: 'Identify the missing judgment records',
+            background: 'Customer service completed judgment but the backend has no record',
+            expectedOutcome: 'Provide a root cause for the affected orders',
+            assignee: 'Alice',
+            keyPoints: ['Check acceptance rules', 'Compare affected order types'],
+            uncertainties: ['Whether non-reassurance orders are also affected'],
             confidence: 0.88,
             priority: 'P1',
             dueText: 'tomorrow 16:00',
@@ -30,6 +39,12 @@ describe('parseCandidateResponse', () => {
         id: 'candidate-1234-0',
         title: 'Follow up approval',
         context: 'Alice asked for confirmation',
+        goal: 'Identify the missing judgment records',
+        background: 'Customer service completed judgment but the backend has no record',
+        expectedOutcome: 'Provide a root cause for the affected orders',
+        assignee: 'Alice',
+        keyPoints: ['Check acceptance rules', 'Compare affected order types'],
+        uncertainties: ['Whether non-reassurance orders are also affected'],
         sourceText: 'Alice: please confirm tomorrow',
         sourceApp: 'Feishu',
         confidence: 0.88,
@@ -83,5 +98,56 @@ describe('parseCandidateResponse', () => {
         status: 'pending'
       }
     ])
+  })
+
+  it('sends pasted images and text as one multimodal analysis request', async () => {
+    const fetchImpl = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      expect(JSON.parse(String(init?.body))).toMatchObject({
+        input: [
+          { role: 'system' },
+          {
+            role: 'user',
+            content: [
+              { type: 'input_text' },
+              {
+                type: 'input_image',
+                image_url: 'data:image/png;base64,aA==',
+                detail: 'high'
+              }
+            ]
+          }
+        ]
+      })
+      return new Response(
+        JSON.stringify({
+          output_text: JSON.stringify({
+            candidates: [{ title: '排查住宿判责记录缺失', confidence: 0.92 }]
+          })
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )
+    })
+    const analyzer = new ObsidianDailyTodoCandidateAnalyzer(
+      {
+        endpoint: 'https://example.test/api/v3',
+        model: 'vision-model',
+        apiKey: 'key',
+        confidenceThreshold: 0.75
+      },
+      { fetchImpl: fetchImpl as typeof fetch }
+    )
+
+    const result = await analyzer.analyze({
+      directory: '/vault',
+      filePath: '/vault/2026-07-27.md',
+      sourceText: '希望今天先给个归因',
+      sourceImage: { dataUrl: 'data:image/png;base64,aA==', mimeType: 'image/png' }
+    })
+
+    expect(result).toMatchObject({
+      ok: true,
+      candidates: [{ title: '排查住宿判责记录缺失', sourceKind: 'mixed' }]
+    })
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
   })
 })

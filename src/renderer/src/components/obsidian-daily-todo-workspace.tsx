@@ -16,7 +16,10 @@ import type {
   ObsidianDailyTodoItem,
   ObsidianDailyTodoSnapshot
 } from '../../../shared/obsidian-daily-todo'
-import type { ObsidianDailyTodoCandidate } from '../../../shared/obsidian-daily-todo-candidate'
+import type {
+  ObsidianDailyTodoCandidate,
+  ObsidianDailyTodoCandidateSourceImage
+} from '../../../shared/obsidian-daily-todo-candidate'
 import type { ObsidianDailyTodoAnalytics } from '../../../shared/obsidian-daily-todo-analytics'
 import {
   formatObsidianDailyTodoFocusClock,
@@ -52,6 +55,7 @@ type ObsidianDailyTodoWorkspaceProps = {
   filter: ObsidianDailyTodoFilter
   saving: boolean
   candidateSourceText: string
+  candidateSourceImage: ObsidianDailyTodoCandidateSourceImage | null
   candidateAnalyzing: boolean
   candidateBusyIds: ReadonlySet<string>
   candidateErrorMessage: string | null
@@ -70,6 +74,7 @@ type ObsidianDailyTodoWorkspaceProps = {
   ) => Promise<boolean>
   onAiExecute: (todo: ObsidianDailyTodoItem) => void
   onCandidateSourceTextChange: (value: string) => void
+  onCandidateSourceImageChange: (value: ObsidianDailyTodoCandidateSourceImage | null) => void
   onListeningForCandidatesChange: (value: boolean) => void
   onAnalyzeCandidates: () => void
   onAcceptCandidate: (
@@ -95,6 +100,7 @@ export function ObsidianDailyTodoWorkspace({
   filter,
   saving,
   candidateSourceText,
+  candidateSourceImage,
   candidateAnalyzing,
   candidateBusyIds,
   candidateErrorMessage,
@@ -109,6 +115,7 @@ export function ObsidianDailyTodoWorkspace({
   onSaveWorkRecord,
   onAiExecute,
   onCandidateSourceTextChange,
+  onCandidateSourceImageChange,
   onListeningForCandidatesChange,
   onAnalyzeCandidates,
   onAcceptCandidate,
@@ -160,11 +167,13 @@ export function ObsidianDailyTodoWorkspace({
             <ObsidianDailyTodoCandidatePanel
               candidates={candidates}
               sourceText={candidateSourceText}
+              sourceImage={candidateSourceImage}
               analyzing={candidateAnalyzing}
               busyCandidateIds={candidateBusyIds}
               disabled={!snapshot?.filePath}
               errorMessage={candidateErrorMessage}
               onSourceTextChange={onCandidateSourceTextChange}
+              onSourceImageChange={onCandidateSourceImageChange}
               listening={listeningForCandidates}
               onListeningChange={onListeningForCandidatesChange}
               onAnalyze={onAnalyzeCandidates}

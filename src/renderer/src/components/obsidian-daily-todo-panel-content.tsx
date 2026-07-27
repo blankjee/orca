@@ -8,7 +8,10 @@ import type {
   ObsidianDailyTodoSnapshot,
   ObsidianDailyTodoStatus
 } from '../../../shared/obsidian-daily-todo'
-import type { ObsidianDailyTodoCandidate } from '../../../shared/obsidian-daily-todo-candidate'
+import type {
+  ObsidianDailyTodoCandidate,
+  ObsidianDailyTodoCandidateSourceImage
+} from '../../../shared/obsidian-daily-todo-candidate'
 import type { ObsidianDailyTodoAnalytics } from '../../../shared/obsidian-daily-todo-analytics'
 import type { ObsidianDailyTodoPriority } from '../../../shared/obsidian-daily-todo-mutation'
 import type { ObsidianDailyTodoFocusSession } from '../../../shared/obsidian-daily-todo-focus'
@@ -56,6 +59,7 @@ type ObsidianDailyTodoPanelContentProps = {
   draft: string
   priority: ObsidianDailyTodoDraftPriority
   candidateSourceText: string
+  candidateSourceImage: ObsidianDailyTodoCandidateSourceImage | null
   candidateAnalyzing: boolean
   candidateBusyIds: ReadonlySet<string>
   candidateErrorMessage: string | null
@@ -75,6 +79,7 @@ type ObsidianDailyTodoPanelContentProps = {
   onPriorityChange: (priority: ObsidianDailyTodoDraftPriority) => void
   onAdd: () => void
   onCandidateSourceTextChange: (value: string) => void
+  onCandidateSourceImageChange: (value: ObsidianDailyTodoCandidateSourceImage | null) => void
   onListeningForCandidatesChange: (value: boolean) => void
   onAnalyzeCandidates: () => void
   onAcceptCandidate: (
@@ -121,6 +126,7 @@ export function ObsidianDailyTodoPanelContent({
   draft,
   priority,
   candidateSourceText,
+  candidateSourceImage,
   candidateAnalyzing,
   candidateBusyIds,
   candidateErrorMessage,
@@ -140,6 +146,7 @@ export function ObsidianDailyTodoPanelContent({
   onPriorityChange,
   onAdd,
   onCandidateSourceTextChange,
+  onCandidateSourceImageChange,
   onListeningForCandidatesChange,
   onAnalyzeCandidates,
   onAcceptCandidate,
@@ -306,6 +313,7 @@ export function ObsidianDailyTodoPanelContent({
             filter={filter}
             saving={recordSaving}
             candidateSourceText={candidateSourceText}
+            candidateSourceImage={candidateSourceImage}
             candidateAnalyzing={candidateAnalyzing}
             candidateBusyIds={candidateBusyIds}
             candidateErrorMessage={candidateErrorMessage}
@@ -320,6 +328,7 @@ export function ObsidianDailyTodoPanelContent({
             onSaveWorkRecord={onSaveWorkRecord}
             onAiExecute={onAiExecute}
             onCandidateSourceTextChange={onCandidateSourceTextChange}
+            onCandidateSourceImageChange={onCandidateSourceImageChange}
             onListeningForCandidatesChange={onListeningForCandidatesChange}
             onAnalyzeCandidates={onAnalyzeCandidates}
             onAcceptCandidate={onAcceptCandidate}

@@ -122,12 +122,14 @@ export class ObsidianDailyTodoCandidateService {
       return { ok: false, code: 'invalid-input', message: 'Invalid candidate accept input.' }
     }
     const priority = input.priority === null ? undefined : (input.priority ?? candidate.priority)
+    const workRecordBody = buildCandidateWorkRecord(candidate)
     const todoResult = await addObsidianDailyTodoToNote({
       directory: input.directory,
       filePath: input.filePath,
       text: title,
       group: input.group?.trim() || candidate.group || '今日任务',
-      priority
+      priority,
+      workRecordBody
     })
     if (!todoResult.ok) {
       return { ok: false, code: 'write-failed', message: todoResult.message }
@@ -165,6 +167,35 @@ export class ObsidianDailyTodoCandidateService {
       this.options.filePath ?? join(app.getPath('userData'), 'obsidian-daily-todo-candidates.json')
     )
   }
+}
+
+export function buildCandidateWorkRecord(candidate: ObsidianDailyTodoCandidate): string {
+  const sections: string[] = []
+  appendRecordField(sections, '目标', candidate.goal)
+  appendRecordField(sections, '背景', candidate.background || candidate.context)
+  appendRecordField(sections, '负责人', candidate.assignee)
+  appendRecordField(sections, '预期时间', candidate.dueText)
+  appendRecordField(sections, '预期结果', candidate.expectedOutcome)
+  appendRecordList(sections, '执行要点', candidate.keyPoints)
+  appendRecordList(sections, '待确认', candidate.uncertainties)
+  if (candidate.sourceText && candidate.sourceText !== '粘贴的图片') {
+    sections.push('', '#### 来源摘录', '', candidate.sourceText.trim())
+  }
+  return sections.join('\n').trim()
+}
+
+function appendRecordField(sections: string[], label: string, value?: string): void {
+  if (value?.trim()) {
+    sections.push(`- **${label}**：${value.trim()}`)
+  }
+}
+
+function appendRecordList(sections: string[], label: string, values?: readonly string[]): void {
+  const normalized = values?.map((value) => value.trim()).filter(Boolean) ?? []
+  if (normalized.length === 0) {
+    return
+  }
+  sections.push('', `#### ${label}`, '', ...normalized.map((value) => `- ${value}`))
 }
 
 export function readCandidateAnalyzerConfig(

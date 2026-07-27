@@ -53,6 +53,7 @@ function WorkspaceHarness(): React.JSX.Element {
       filter="all"
       saving={false}
       candidateSourceText=""
+      candidateSourceImage={null}
       candidateAnalyzing={false}
       candidateBusyIds={new Set()}
       candidateErrorMessage={null}
@@ -67,6 +68,7 @@ function WorkspaceHarness(): React.JSX.Element {
       onSaveWorkRecord={async () => true}
       onAiExecute={vi.fn()}
       onCandidateSourceTextChange={vi.fn()}
+      onCandidateSourceImageChange={vi.fn()}
       onListeningForCandidatesChange={vi.fn()}
       onAnalyzeCandidates={vi.fn()}
       onAcceptCandidate={vi.fn()}

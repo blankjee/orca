@@ -98,6 +98,13 @@ describe('ObsidianDailyTodoCandidateService', () => {
           id: 'candidate-1',
           title: 'Follow up budget',
           context: 'From pasted text',
+          goal: 'Explain why judgment records are missing',
+          background: 'About ten compensation orders were judged but have no backend record',
+          expectedOutcome: 'Share a root-cause conclusion',
+          assignee: '黄杰',
+          dueText: '今天',
+          keyPoints: ['Check acceptance rules', 'Compare reassurance and lodging orders'],
+          uncertainties: ['Whether other order types are affected'],
           sourceText: 'please follow up',
           confidence: 0.9,
           priority: 'P2',
@@ -116,7 +123,13 @@ describe('ObsidianDailyTodoCandidateService', () => {
     })
 
     expect(result.ok, result.ok ? '' : result.message).toBe(true)
-    await expect(readFile(notePath, 'utf8')).resolves.toContain('- [ ] Follow up budget')
+    const markdown = await readFile(notePath, 'utf8')
+    expect(markdown).toContain('- [ ] Follow up budget')
+    expect(markdown).toContain('### Follow up budget')
+    expect(markdown).toContain('- **目标**：Explain why judgment records are missing')
+    expect(markdown).toContain('- **预期时间**：今天')
+    expect(markdown).toContain('#### 执行要点')
+    expect(markdown).toContain('#### 待确认')
     await expect(service.list()).resolves.toEqual({ ok: true, candidates: [] })
   })
 })
