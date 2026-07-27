@@ -97,6 +97,7 @@ type MainWindowStub = {
     on: MockFn
     send?: MockFn
     reload?: MockFn
+    reloadIgnoringCache?: MockFn
     session: {
       setPermissionRequestHandler: MockFn
       setPermissionCheckHandler: MockFn
@@ -111,7 +112,9 @@ type RuntimeStub = {
   markGraphUnavailable: MockFn
 }
 
-function createMainWindow(extraWebContents: { on?: MockFn; send?: MockFn } = {}): MainWindowStub {
+function createMainWindow(
+  extraWebContents: { on?: MockFn; send?: MockFn; reloadIgnoringCache?: MockFn } = {}
+): MainWindowStub {
   return {
     id: 1,
     isDestroyed: vi.fn(() => false),
@@ -122,6 +125,7 @@ function createMainWindow(extraWebContents: { on?: MockFn; send?: MockFn } = {})
       isDestroyed: vi.fn(() => false),
       on: vi.fn(),
       reload: vi.fn(),
+      reloadIgnoringCache: vi.fn(),
       session: {
         setPermissionRequestHandler: setPermissionRequestHandlerMock,
         setPermissionCheckHandler: setPermissionCheckHandlerMock
@@ -199,9 +203,9 @@ describe('attachMainWindowServices', () => {
 
     expect(onBeforeRendererReload).toHaveBeenCalledWith({
       webContentsId: 1,
-      ignoreCache: false
+      ignoreCache: true
     })
-    expect(mainWindow.webContents.reload).toHaveBeenCalledTimes(1)
+    expect(mainWindow.webContents.reloadIgnoringCache).toHaveBeenCalledTimes(1)
   })
 
   it('retries local PTY registry hydration after local startup services are ready', async () => {

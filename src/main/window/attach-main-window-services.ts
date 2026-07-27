@@ -161,8 +161,10 @@ function registerAppReloadHandler(
     ) {
       return
     }
-    onBeforeRendererReload?.({ webContentsId: mainWebContents.id, ignoreCache: false })
-    mainWebContents.reload()
+    // Why: this path also recovers stale or partially replaced lazy chunks;
+    // bypass Chromium's module cache so the renderer cannot reload bad bytes.
+    onBeforeRendererReload?.({ webContentsId: mainWebContents.id, ignoreCache: true })
+    mainWebContents.reloadIgnoringCache()
   })
   mainWindow.on('closed', () => {
     if (activeAppReloadHandlerToken !== handlerToken) {

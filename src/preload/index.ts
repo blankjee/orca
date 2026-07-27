@@ -517,7 +517,21 @@ const api = {
         throw error
       }
     },
-    reload: (): Promise<void> => ipcRenderer.invoke('app:reload'),
+    reload: async (): Promise<void> => {
+      // Why: lazy-chunk recovery may run while an editor is dirty. Preserve
+      // renderer-owned state and bypass the ordinary beforeunload veto so the
+      // recovery reload cannot strand the active surface in Suspense.
+      await prepareRendererForAppRestart({
+        startedEventName: ORCA_APP_RESTART_STARTED_EVENT,
+        abortedEventName: ORCA_APP_RESTART_ABORTED_EVENT
+      })
+      try {
+        return await ipcRenderer.invoke('app:reload')
+      } catch (error) {
+        window.dispatchEvent(new Event(ORCA_APP_RESTART_ABORTED_EVENT))
+        throw error
+      }
+    },
     awaitFirstWindowStartupServices: (): Promise<void> =>
       ipcRenderer.invoke('app:awaitFirstWindowStartupServices'),
     startupDiagnostic: (event: string, details?: Record<string, unknown>): Promise<void> =>
