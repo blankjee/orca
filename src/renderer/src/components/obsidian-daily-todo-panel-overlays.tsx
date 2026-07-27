@@ -6,7 +6,8 @@ import type {
 } from '../../../shared/obsidian-daily-todo'
 import type {
   ObsidianDailyTodoCandidate,
-  ObsidianDailyTodoCandidateSourceImage
+  ObsidianDailyTodoCandidateSourceImage,
+  ObsidianDailyTodoMonitorActivity
 } from '../../../shared/obsidian-daily-todo-candidate'
 import type { ObsidianDailyTodoDraftPriority } from './obsidian-daily-todo-add-form'
 import { ObsidianDailyTodoCandidateSheet } from './obsidian-daily-todo-candidate-sheet'
@@ -26,6 +27,7 @@ export function ObsidianDailyTodoPanelOverlays({
   candidateSourceImage,
   candidateAnalyzing,
   listeningForCandidates,
+  monitorActivity,
   candidateBusyIds,
   candidateError,
   setCandidateSourceText,
@@ -53,6 +55,7 @@ export function ObsidianDailyTodoPanelOverlays({
   candidateSourceImage: ObsidianDailyTodoCandidateSourceImage | null
   candidateAnalyzing: boolean
   listeningForCandidates: boolean
+  monitorActivity: ObsidianDailyTodoMonitorActivity | null
   candidateBusyIds: ReadonlySet<string>
   candidateError: string | null
   setCandidateSourceText: (value: string) => void
@@ -102,6 +105,7 @@ export function ObsidianDailyTodoPanelOverlays({
         sourceImage={candidateSourceImage}
         analyzing={candidateAnalyzing}
         listening={listeningForCandidates}
+        monitorActivity={monitorActivity}
         busyCandidateIds={candidateBusyIds}
         disabled={!snapshot?.filePath}
         errorMessage={candidateError}

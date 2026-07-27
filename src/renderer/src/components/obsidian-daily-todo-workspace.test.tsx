@@ -59,6 +59,7 @@ function WorkspaceHarness(): React.JSX.Element {
       candidateErrorMessage={null}
       candidates={[]}
       listeningForCandidates={false}
+      monitorActivity={null}
       onModeChange={setMode}
       onFilterChange={vi.fn()}
       onSelectTodo={(nextTodo) => {

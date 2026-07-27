@@ -1,4 +1,4 @@
-import type { WebContents } from 'electron'
+import { BrowserWindow, Notification, type WebContents } from 'electron'
 
 import { loadObsidianDailyTodos } from './obsidian-daily-todo-service'
 import {
@@ -10,21 +10,39 @@ import {
   type ObsidianDailyTodoInputMonitorEvent
 } from './obsidian-daily-todo-input-monitor'
 import type {
+  ObsidianDailyTodoCandidate,
   ObsidianDailyTodoCandidateMonitorStartInput,
   ObsidianDailyTodoCandidateMonitorStatusResult
 } from '../shared/obsidian-daily-todo-candidate'
 
-const TODO_SIGNAL_PATTERN =
-  /提醒我|提示我|记得|帮我记|帮我提醒|待办|todo|TODO|明天|今天|下周|下个周|周一|周二|周三|周四|周五|周六|周日|写|做|处理|跟进|提交|完成|开会|会议|周报|日报|月报/u
+type CandidateServicePort = Pick<ObsidianDailyTodoCandidateService, 'analyzeText' | 'list'>
+type InputMonitorPort = Pick<ObsidianDailyTodoInputMonitor, 'isRunning' | 'start' | 'stop'>
+type CandidateMonitorOptions = {
+  monitor?: InputMonitorPort
+  notify?: (
+    webContents: WebContents | null,
+    sourceApp: string,
+    candidates: readonly ObsidianDailyTodoCandidate[]
+  ) => void
+}
 
 export class ObsidianDailyTodoCandidateMonitorController {
-  private readonly monitor = new ObsidianDailyTodoInputMonitor()
+  private readonly monitor: InputMonitorPort
+  private readonly notify: NonNullable<CandidateMonitorOptions['notify']>
   private target: ObsidianDailyTodoCandidateMonitorStartInput | null = null
   private analyzing = false
   private lastAnalyzedText = ''
+  private lastCapturedText = ''
+  private pendingEvent: ObsidianDailyTodoInputMonitorEvent | null = null
   private webContents: WebContents | null = null
 
-  constructor(private readonly candidateService: ObsidianDailyTodoCandidateService) {}
+  constructor(
+    private readonly candidateService: CandidateServicePort,
+    options: CandidateMonitorOptions = {}
+  ) {
+    this.monitor = options.monitor ?? new ObsidianDailyTodoInputMonitor()
+    this.notify = options.notify ?? showTodoCandidateNotification
+  }
 
   start(
     input: ObsidianDailyTodoCandidateMonitorStartInput,
@@ -44,6 +62,9 @@ export class ObsidianDailyTodoCandidateMonitorController {
     this.target = null
     this.webContents = null
     this.analyzing = false
+    this.pendingEvent = null
+    this.lastCapturedText = ''
+    this.lastAnalyzedText = ''
     return { ok: true, running: false }
   }
 
@@ -52,29 +73,39 @@ export class ObsidianDailyTodoCandidateMonitorController {
   }
 
   private async handleInputEvent(event: ObsidianDailyTodoInputMonitorEvent): Promise<void> {
-    const target = this.target
-    if (!target || this.analyzing) {
+    if (!this.target) {
       return
     }
     const sourceText = event.text.trim()
-    if (!sourceText || sourceText === this.lastAnalyzedText) {
+    if (!sourceText || sourceText === this.lastCapturedText) {
       return
     }
-    if (!TODO_SIGNAL_PATTERN.test(sourceText)) {
-      console.log(
-        `[obsidian-ai-capture][monitor] captured but skipped: ${sourceText.slice(0, 120)}`
-      )
+    this.lastCapturedText = sourceText
+    this.publishActivity(event, 'monitor-captured', 'analyzing')
+    if (this.analyzing) {
+      // Why: accessibility changes can arrive while vision/text analysis is in flight.
+      // Keep the newest capture instead of silently dropping the user's next message.
+      this.pendingEvent = event
       return
     }
-    console.log(`[obsidian-ai-capture][monitor] analyzing: ${sourceText.slice(0, 120)}`)
-    this.webContents?.send('obsidianDailyTodos:candidates:changed', {
-      source: 'monitor-captured',
-      app: event.app,
-      reason: event.reason,
-      sourceText
-    })
+    await this.analyzeEvent(event)
+  }
+
+  private async analyzeEvent(event: ObsidianDailyTodoInputMonitorEvent): Promise<void> {
+    const target = this.target
+    if (!target) {
+      return
+    }
+    const sourceText = event.text.trim()
+    console.log(
+      `[obsidian-ai-capture][monitor] analyzing ${sourceText.length} chars from ${event.app}`
+    )
     this.analyzing = true
     try {
+      const beforeResult = await this.candidateService.list()
+      const existingCandidateIds = new Set(
+        beforeResult.ok ? beforeResult.candidates.map((candidate) => candidate.id) : []
+      )
       const snapshot = await loadObsidianDailyTodos(
         target.directory,
         target.filePath,
@@ -93,19 +124,74 @@ export class ObsidianDailyTodoCandidateMonitorController {
       })
       if (result.ok) {
         this.lastAnalyzedText = sourceText
-        console.log(`[obsidian-ai-capture][monitor] analyze ok: ${result.candidates.length}`)
-        this.webContents?.send('obsidianDailyTodos:candidates:changed', {
-          source: 'monitor-analyzed',
-          app: event.app,
-          reason: event.reason,
-          sourceText
-        })
+        const newCandidates = result.candidates.filter(
+          (candidate) => !existingCandidateIds.has(candidate.id)
+        )
+        console.log(`[obsidian-ai-capture][monitor] analyze ok: ${newCandidates.length} new`)
+        this.publishActivity(
+          event,
+          'monitor-analyzed',
+          newCandidates.length > 0 ? 'todo' : 'no-todo',
+          newCandidates.map((candidate) => candidate.title)
+        )
+        if (newCandidates.length > 0) {
+          this.notify(this.webContents, event.app, newCandidates)
+        }
       } else {
         console.warn(`[obsidian-ai-capture][monitor] analyze failed: ${result.message}`)
+        this.publishActivity(event, 'monitor-analyzed', 'error')
         this.webContents?.send('obsidianDailyTodos:candidates:monitorError', result.message)
       }
     } finally {
       this.analyzing = false
+      const pendingEvent = this.pendingEvent
+      this.pendingEvent = null
+      if (pendingEvent && pendingEvent.text.trim() !== this.lastAnalyzedText) {
+        void this.analyzeEvent(pendingEvent)
+      }
     }
   }
+
+  private publishActivity(
+    event: ObsidianDailyTodoInputMonitorEvent,
+    source: 'monitor-captured' | 'monitor-analyzed',
+    analysisStatus: 'analyzing' | 'todo' | 'no-todo' | 'error',
+    candidateTitles: string[] = []
+  ): void {
+    this.webContents?.send('obsidianDailyTodos:candidates:changed', {
+      source,
+      app: event.app,
+      reason: event.reason,
+      sourceText: event.text.trim(),
+      capturedAt: event.timestamp,
+      analysisStatus,
+      candidateCount: candidateTitles.length,
+      candidateTitles
+    })
+  }
+}
+
+function showTodoCandidateNotification(
+  webContents: WebContents | null,
+  sourceApp: string,
+  candidates: readonly { title: string }[]
+): void {
+  if (!Notification.isSupported()) {
+    return
+  }
+  const titles = candidates
+    .slice(0, 3)
+    .map((candidate) => candidate.title)
+    .join('；')
+  const extraCount = Math.max(0, candidates.length - 3)
+  const notification = new Notification({
+    title: `发现 ${candidates.length} 条 Todo 候选`,
+    body: `${sourceApp} · ${titles}${extraCount > 0 ? `；另有 ${extraCount} 条` : ''}`
+  })
+  notification.on('click', () => {
+    const window = webContents ? BrowserWindow.fromWebContents(webContents) : null
+    window?.show()
+    window?.focus()
+  })
+  notification.show()
 }

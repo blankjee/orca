@@ -6,8 +6,10 @@ import type { ObsidianDailyTodoSnapshot } from '../../../shared/obsidian-daily-t
 import type {
   ObsidianDailyTodoCandidate,
   ObsidianDailyTodoCandidateAnalyzeResult,
+  ObsidianDailyTodoCandidateChangedEvent,
   ObsidianDailyTodoCandidateMutationResult,
-  ObsidianDailyTodoCandidateSourceImage
+  ObsidianDailyTodoCandidateSourceImage,
+  ObsidianDailyTodoMonitorActivity
 } from '../../../shared/obsidian-daily-todo-candidate'
 
 type TodoPriority = 'P1' | 'P2' | 'P3'
@@ -31,6 +33,7 @@ export function useObsidianDailyTodoCandidates({
   candidateError: string | null
   busyCandidateIds: Set<string>
   listeningForCandidates: boolean
+  monitorActivity: ObsidianDailyTodoMonitorActivity | null
   setCandidateSourceText: (value: string) => void
   setCandidateSourceImage: (value: ObsidianDailyTodoCandidateSourceImage | null) => void
   setListeningForCandidates: (value: boolean) => void
@@ -48,6 +51,9 @@ export function useObsidianDailyTodoCandidates({
   const [candidateError, setCandidateError] = useState<string | null>(null)
   const [busyCandidateIds, setBusyCandidateIds] = useState<Set<string>>(new Set())
   const [listeningForCandidates, setListeningForCandidatesState] = useState(false)
+  const [monitorActivity, setMonitorActivity] = useState<ObsidianDailyTodoMonitorActivity | null>(
+    null
+  )
 
   const loadCandidates = useCallback(async (): Promise<void> => {
     const result = await window.api.obsidianDailyTodos.candidates.list()
@@ -64,32 +70,50 @@ export function useObsidianDailyTodoCandidates({
   }, [loadCandidates])
 
   useEffect(() => {
-    return window.api.obsidianDailyTodos.candidates.onChanged(((event?: {
-      source?: string
-      sourceText?: string
-    }) => {
-      void loadCandidates()
-      if (event?.source === 'monitor-captured') {
-        toast.info(
-          translate(
-            'auto.components.ObsidianDailyTodoCandidatePanel.autoCaptured',
-            'Potential Todo detected, analyzing...'
+    return window.api.obsidianDailyTodos.candidates.onChanged(
+      (event?: ObsidianDailyTodoCandidateChangedEvent) => {
+        void loadCandidates()
+        const sourceText = event?.sourceText
+        const capturedAt = event?.capturedAt
+        if (
+          (event?.source === 'monitor-captured' || event?.source === 'monitor-analyzed') &&
+          sourceText &&
+          capturedAt
+        ) {
+          setMonitorActivity((current) => {
+            if (current && current.capturedAt > capturedAt) {
+              return current
+            }
+            return {
+              sourceText,
+              app: event.app || 'Unknown',
+              reason: event.reason || '',
+              capturedAt,
+              status: event.analysisStatus || 'analyzing',
+              candidateCount: event.candidateCount ?? 0,
+              candidateTitles: event.candidateTitles ?? []
+            }
+          })
+        }
+        if (event?.source === 'monitor-captured') {
+          return
+        }
+        if (event?.source === 'monitor-analyzed' && event.analysisStatus === 'todo') {
+          toast.success(
+            translate(
+              'auto.components.ObsidianDailyTodoCandidatePanel.todoDetected',
+              'Todo candidate detected'
+            )
           )
-        )
-        return
+        }
       }
-      toast.success(
-        translate(
-          'auto.components.ObsidianDailyTodoCandidatePanel.autoCaptured',
-          'Todo candidate captured'
-        )
-      )
-    }) as () => void)
+    )
   }, [loadCandidates])
 
   useEffect(() => {
     return window.api.obsidianDailyTodos.candidates.onMonitorError((message) => {
       setCandidateError(message)
+      setMonitorActivity((current) => (current ? { ...current, status: 'error' } : current))
     })
   }, [])
 
@@ -234,6 +258,7 @@ export function useObsidianDailyTodoCandidates({
     candidateError,
     busyCandidateIds,
     listeningForCandidates,
+    monitorActivity,
     setCandidateSourceText,
     setCandidateSourceImage,
     setListeningForCandidates,

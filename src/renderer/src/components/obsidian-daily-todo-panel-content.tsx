@@ -10,7 +10,8 @@ import type {
 } from '../../../shared/obsidian-daily-todo'
 import type {
   ObsidianDailyTodoCandidate,
-  ObsidianDailyTodoCandidateSourceImage
+  ObsidianDailyTodoCandidateSourceImage,
+  ObsidianDailyTodoMonitorActivity
 } from '../../../shared/obsidian-daily-todo-candidate'
 import type { ObsidianDailyTodoAnalytics } from '../../../shared/obsidian-daily-todo-analytics'
 import type { ObsidianDailyTodoPriority } from '../../../shared/obsidian-daily-todo-mutation'
@@ -65,6 +66,7 @@ type ObsidianDailyTodoPanelContentProps = {
   candidateErrorMessage: string | null
   candidates: readonly ObsidianDailyTodoCandidate[]
   listeningForCandidates: boolean
+  monitorActivity: ObsidianDailyTodoMonitorActivity | null
   focusSession: ObsidianDailyTodoFocusSession | null
   focusNow: number
   focusBusy: boolean
@@ -132,6 +134,7 @@ export function ObsidianDailyTodoPanelContent({
   candidateErrorMessage,
   candidates,
   listeningForCandidates,
+  monitorActivity,
   focusSession,
   focusNow,
   focusBusy,
@@ -319,6 +322,7 @@ export function ObsidianDailyTodoPanelContent({
             candidateErrorMessage={candidateErrorMessage}
             candidates={candidates}
             listeningForCandidates={listeningForCandidates}
+            monitorActivity={monitorActivity}
             focusSession={focusSession}
             focusNow={focusNow}
             focusBusy={focusBusy}

@@ -106,6 +106,20 @@ export type ObsidianDailyTodoCandidateChangedEvent = {
   app?: string
   reason?: string
   sourceText?: string
+  capturedAt?: number
+  analysisStatus?: 'analyzing' | 'todo' | 'no-todo' | 'error'
+  candidateCount?: number
+  candidateTitles?: string[]
+}
+
+export type ObsidianDailyTodoMonitorActivity = {
+  sourceText: string
+  app: string
+  reason: string
+  capturedAt: number
+  status: 'analyzing' | 'todo' | 'no-todo' | 'error'
+  candidateCount: number
+  candidateTitles: string[]
 }
 
 export type ObsidianDailyTodoCandidateMonitorStartInput = {

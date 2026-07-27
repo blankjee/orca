@@ -44,9 +44,11 @@ on getKids(elem)
 	return {}
 end getKids
 
-on findText(rootElem, maxNodes)
+on collectText(rootElem, maxNodes, maxChars)
 	set queue to {rootElem}
 	set visited to 0
+	set combined to ""
+	set seenValues to {}
 	repeat while (count of queue) > 0
 		if visited >= maxNodes then exit repeat
 		set cur to item 1 of queue
@@ -59,15 +61,27 @@ on findText(rootElem, maxNodes)
 		set r to my getRole(cur)
 		if r is "AXTextArea" or r is "AXTextField" or r is "AXComboBox" or r is "AXStaticText" then
 			set v to my getVal(cur)
-			if v is not "" then return v
+			if v is not "" and seenValues does not contain v then
+				set remainingChars to maxChars - (count characters of combined)
+				if remainingChars <= 0 then exit repeat
+				if (count characters of v) > remainingChars then
+					set v to text 1 thru remainingChars of v
+				end if
+				set end of seenValues to v
+				if combined is "" then
+					set combined to v
+				else
+					set combined to combined & linefeed & v
+				end if
+			end if
 		end if
 		set kids to my getKids(cur)
 		repeat with k in kids
 			set queue to queue & {(contents of k)}
 		end repeat
 	end repeat
-	return ""
-end findText
+	return combined
+end collectText
 
 tell application "System Events"
 	try
@@ -89,14 +103,13 @@ tell application "System Events"
 		try
 			set fe to value of attribute "AXFocusedUIElement" of p
 			set roleStr to my getRole(fe)
-			set valStr to my getVal(fe)
-			if valStr is "" then
-				set valStr to my findText(fe, 120)
-			end if
+		end try
+		try
+			set valStr to my collectText(front window of p, 320, 8000)
 		end try
 		if valStr is "" then
 			try
-				set valStr to my findText(front window of p, 200)
+				set valStr to my collectText(fe, 160, 8000)
 			end try
 		end if
 		return bid & sep & pname & sep & winTitle & sep & roleStr & sep & valStr

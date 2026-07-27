@@ -1,20 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { translate } from '@/i18n/i18n'
-import {
-  buildObsidianDailyNoteUrl,
-  buildObsidianOpenNoteUrl
-} from '../../../shared/obsidian-daily-note'
+import * as dailyNoteUrls from '../../../shared/obsidian-daily-note'
 import type {
   ObsidianDailyTodoItem,
   ObsidianDailyTodoResult,
   ObsidianDailyTodoSnapshot
 } from '../../../shared/obsidian-daily-todo'
 import { ObsidianDailyTodoPanelContent } from './obsidian-daily-todo-panel-content'
-import {
-  applyObsidianDailyTodoResult,
-  getObsidianDailyTodoErrorMessage
-} from './obsidian-daily-todo-result'
+import * as todoResult from './obsidian-daily-todo-result'
 import type { ObsidianDailyWorkspaceMode } from './obsidian-daily-todo-workspace'
 import { useObsidianDailyTodoCandidates } from './use-obsidian-daily-todo-candidates'
 import { useObsidianDailyTodoMutations } from './use-obsidian-daily-todo-mutations'
@@ -70,7 +64,7 @@ export function ObsidianDailyTodoPanel({
         setLoading(true)
       }
       try {
-        applyObsidianDailyTodoResult(
+        todoResult.applyObsidianDailyTodoResult(
           await window.api.obsidianDailyTodos.load({
             directory,
             filePath: selectedFilePath,
@@ -136,6 +130,7 @@ export function ObsidianDailyTodoPanel({
     candidateError,
     busyCandidateIds,
     listeningForCandidates,
+    monitorActivity,
     setCandidateSourceText,
     setCandidateSourceImage,
     setListeningForCandidates,
@@ -156,9 +151,9 @@ export function ObsidianDailyTodoPanel({
       directory,
       filePath: snapshot?.filePath,
       onResult: (result) => {
-        applyObsidianDailyTodoResult(result, setSnapshot, setError)
+        todoResult.applyObsidianDailyTodoResult(result, setSnapshot, setError)
         if (!result.ok) {
-          toast.error(getObsidianDailyTodoErrorMessage(result))
+          toast.error(todoResult.getObsidianDailyTodoErrorMessage(result))
         }
       }
     })
@@ -241,8 +236,8 @@ export function ObsidianDailyTodoPanel({
 
   const openDailyNote = (): void => {
     const url = snapshot?.relativePath
-      ? buildObsidianOpenNoteUrl(vault.trim(), snapshot.relativePath)
-      : buildObsidianDailyNoteUrl(vault.trim())
+      ? dailyNoteUrls.buildObsidianOpenNoteUrl(vault.trim(), snapshot.relativePath)
+      : dailyNoteUrls.buildObsidianDailyNoteUrl(vault.trim())
     void window.api.shell.openUrl(url).catch(() => {
       toast.error(
         translate(
@@ -268,11 +263,11 @@ export function ObsidianDailyTodoPanel({
         group: '今日任务',
         priority
       })
-      applyObsidianDailyTodoResult(result, setSnapshot, setError)
+      todoResult.applyObsidianDailyTodoResult(result, setSnapshot, setError)
       if (result.ok) {
         setDraft('')
       } else {
-        toast.error(getObsidianDailyTodoErrorMessage(result))
+        toast.error(todoResult.getObsidianDailyTodoErrorMessage(result))
       }
     } finally {
       setAdding(false)
@@ -297,14 +292,14 @@ export function ObsidianDailyTodoPanel({
         body,
         expectedBody
       })
-      applyObsidianDailyTodoResult(result, setSnapshot, setError)
+      todoResult.applyObsidianDailyTodoResult(result, setSnapshot, setError)
       if (result.ok) {
         setRecordTodo(null)
         toast.success(
           translate('auto.components.ObsidianDailyWorkRecordSheet.saved', 'Work record saved')
         )
       } else {
-        toast.error(getObsidianDailyTodoErrorMessage(result))
+        toast.error(todoResult.getObsidianDailyTodoErrorMessage(result))
       }
       return result.ok
     } finally {
@@ -317,7 +312,7 @@ export function ObsidianDailyTodoPanel({
       <ObsidianDailyTodoPanelContent
         directory={directory}
         snapshot={snapshot}
-        errorMessage={error ? getObsidianDailyTodoErrorMessage(error) : null}
+        errorMessage={error ? todoResult.getObsidianDailyTodoErrorMessage(error) : null}
         loading={loading}
         adding={adding}
         groups={groups}
@@ -338,6 +333,7 @@ export function ObsidianDailyTodoPanel({
         candidateErrorMessage={candidateError}
         candidates={candidates}
         listeningForCandidates={listeningForCandidates}
+        monitorActivity={monitorActivity}
         focusSession={focus.session}
         focusNow={focus.now}
         focusBusy={focus.busy}
@@ -403,6 +399,7 @@ export function ObsidianDailyTodoPanel({
         candidateSourceImage={candidateSourceImage}
         candidateAnalyzing={candidateAnalyzing}
         listeningForCandidates={listeningForCandidates}
+        monitorActivity={monitorActivity}
         candidateBusyIds={busyCandidateIds}
         candidateError={candidateError}
         setCandidateSourceText={setCandidateSourceText}

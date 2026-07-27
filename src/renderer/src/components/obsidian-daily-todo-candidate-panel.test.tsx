@@ -26,6 +26,7 @@ describe('ObsidianDailyTodoCandidatePanel', () => {
         sourceImage={null}
         analyzing={false}
         listening={false}
+        monitorActivity={null}
         busyCandidateIds={new Set()}
         disabled={false}
         errorMessage={null}
@@ -55,6 +56,7 @@ describe('ObsidianDailyTodoCandidatePanel', () => {
         sourceImage={null}
         analyzing={false}
         listening={false}
+        monitorActivity={null}
         busyCandidateIds={new Set()}
         disabled={false}
         errorMessage={null}
@@ -83,5 +85,39 @@ describe('ObsidianDailyTodoCandidatePanel', () => {
         expect.objectContaining({ mimeType: 'image/png', name: 'chat.png' })
       )
     )
+  })
+
+  it('shows the latest monitored source text and live analysis state', () => {
+    render(
+      <ObsidianDailyTodoCandidatePanel
+        candidates={[]}
+        sourceText=""
+        sourceImage={null}
+        analyzing={false}
+        listening
+        monitorActivity={{
+          sourceText: '希望今天先给出订单归因。',
+          app: 'Feishu',
+          reason: 'content_stable',
+          capturedAt: Date.now(),
+          status: 'analyzing',
+          candidateCount: 0,
+          candidateTitles: []
+        }}
+        busyCandidateIds={new Set()}
+        disabled={false}
+        errorMessage={null}
+        onSourceTextChange={vi.fn()}
+        onSourceImageChange={vi.fn()}
+        onListeningChange={vi.fn()}
+        onAnalyze={vi.fn()}
+        onAccept={vi.fn()}
+        onDismiss={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText('Latest captured text')).toBeTruthy()
+    expect(screen.getByText('希望今天先给出订单归因。')).toBeTruthy()
+    expect(screen.getByText('Analyzing now')).toBeTruthy()
   })
 })

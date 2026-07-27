@@ -9,10 +9,12 @@ import { cn } from '@/lib/utils'
 import type {
   ObsidianDailyTodoCandidate,
   ObsidianDailyTodoCandidatePriority,
-  ObsidianDailyTodoCandidateSourceImage
+  ObsidianDailyTodoCandidateSourceImage,
+  ObsidianDailyTodoMonitorActivity
 } from '../../../shared/obsidian-daily-todo-candidate'
 import { ObsidianDailyTodoCandidateDetails } from './obsidian-daily-todo-candidate-details'
 import { ObsidianDailyTodoCandidateSourceInput } from './obsidian-daily-todo-candidate-source-input'
+import { ObsidianDailyTodoMonitorActivityCard } from './obsidian-daily-todo-monitor-activity'
 
 type ObsidianDailyTodoCandidatePanelProps = {
   candidates: readonly ObsidianDailyTodoCandidate[]
@@ -20,6 +22,7 @@ type ObsidianDailyTodoCandidatePanelProps = {
   sourceImage: ObsidianDailyTodoCandidateSourceImage | null
   analyzing: boolean
   listening: boolean
+  monitorActivity: ObsidianDailyTodoMonitorActivity | null
   busyCandidateIds: ReadonlySet<string>
   disabled: boolean
   errorMessage: string | null
@@ -43,6 +46,7 @@ export function ObsidianDailyTodoCandidatePanel({
   sourceImage,
   analyzing,
   listening,
+  monitorActivity,
   busyCandidateIds,
   disabled,
   errorMessage,
@@ -118,6 +122,8 @@ export function ObsidianDailyTodoCandidatePanel({
               )}
         </Button>
       </div>
+
+      <ObsidianDailyTodoMonitorActivityCard activity={monitorActivity} listening={listening} />
 
       {errorMessage ? (
         <p className="m-4 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">

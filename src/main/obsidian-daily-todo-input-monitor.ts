@@ -3,7 +3,11 @@ import {
   type ObsidianDailyTodoAxSnapshot
 } from './obsidian-daily-todo-ax-reader'
 
-export type ObsidianDailyTodoInputMonitorReason = 'value_cleared' | 'focus_changed' | 'content_jump'
+export type ObsidianDailyTodoInputMonitorReason =
+  | 'value_cleared'
+  | 'focus_changed'
+  | 'content_jump'
+  | 'content_stable'
 
 export type ObsidianDailyTodoInputMonitorEvent = {
   text: string
@@ -16,10 +20,12 @@ export type ObsidianDailyTodoInputMonitorEvent = {
 
 type InputCallback = (event: ObsidianDailyTodoInputMonitorEvent) => void | Promise<void>
 
-const POLL_INTERVAL_MS = 250
+const POLL_INTERVAL_MS = 750
 const MIN_TEXT_LEN = 2
-const MAX_VALUE_LEN = 2000
+const MAX_VALUE_LEN = 8000
 const BROWSER_MIN_DWELL_MS = 30_000
+const STABLE_CAPTURE_MS = 900
+const IGNORED_BUNDLE_IDS = new Set(['com.stablyai.orca'])
 
 const BROWSER_BUNDLE_IDS = new Set([
   'com.google.Chrome',
@@ -88,6 +94,9 @@ export class ObsidianDailyTodoInputMonitor {
   private valueOnFocusEnter = ''
   private focusEnteredAt = 0
   private started = false
+  private stableTimer: NodeJS.Timeout | null = null
+  private pendingStableKey = ''
+  private lastEmittedText = ''
 
   get isRunning(): boolean {
     return this.started
@@ -116,15 +125,25 @@ export class ObsidianDailyTodoInputMonitor {
     this.timer = null
     this.callback = null
     this.started = false
+    if (this.stableTimer) {
+      clearTimeout(this.stableTimer)
+    }
+    this.stableTimer = null
     this.resetState()
     console.log('[obsidian-ai-capture][monitor] stopped')
   }
 
   private resetState(): void {
+    if (this.stableTimer) {
+      clearTimeout(this.stableTimer)
+    }
+    this.stableTimer = null
     this.lastSnapshot = null
     this.lastNonEmptyValue = ''
     this.valueOnFocusEnter = ''
     this.focusEnteredAt = 0
+    this.pendingStableKey = ''
+    this.lastEmittedText = ''
   }
 
   private async tick(): Promise<void> {
@@ -135,6 +154,10 @@ export class ObsidianDailyTodoInputMonitor {
     try {
       const snapshot = await readObsidianDailyTodoAxSnapshot()
       if (!snapshot) {
+        return
+      }
+      if (IGNORED_BUNDLE_IDS.has(snapshot.bundleId)) {
+        this.resetState()
         return
       }
       if ((snapshot.value || '').length > MAX_VALUE_LEN) {
@@ -153,6 +176,7 @@ export class ObsidianDailyTodoInputMonitor {
     const previous = this.lastSnapshot
     const currentValue = snapshot.value || ''
     const now = Date.now()
+    this.scheduleStableCapture(snapshot, currentValue)
     if (!previous) {
       this.lastSnapshot = snapshot
       this.focusEnteredAt = now
@@ -208,6 +232,29 @@ export class ObsidianDailyTodoInputMonitor {
     this.lastSnapshot = snapshot
   }
 
+  private scheduleStableCapture(snapshot: ObsidianDailyTodoAxSnapshot, currentValue: string): void {
+    const trimmed = currentValue.trim()
+    if (trimmed.length < MIN_TEXT_LEN || trimmed === this.lastEmittedText) {
+      return
+    }
+    const captureKey = `${snapshot.bundleId}|${snapshot.windowTitle}|${trimmed}`
+    if (captureKey === this.pendingStableKey) {
+      return
+    }
+    if (this.stableTimer) {
+      clearTimeout(this.stableTimer)
+    }
+    this.pendingStableKey = captureKey
+    this.stableTimer = setTimeout(() => {
+      if (!this.started || this.pendingStableKey !== captureKey) {
+        return
+      }
+      this.emit(trimmed, snapshot, 'content_stable')
+      this.pendingStableKey = ''
+      this.stableTimer = null
+    }, STABLE_CAPTURE_MS)
+  }
+
   private emit(
     text: string,
     snapshot: ObsidianDailyTodoAxSnapshot,
@@ -225,6 +272,10 @@ export class ObsidianDailyTodoInputMonitor {
       isBrowser(snapshot.bundleId) && snapshot.windowTitle
         ? `[页面: ${snapshot.windowTitle}]\n${trimmed}`
         : trimmed
+    if (sourceText === this.lastEmittedText) {
+      return
+    }
+    this.lastEmittedText = sourceText
     void callback({
       text: sourceText,
       app: snapshot.appName || 'Unknown',

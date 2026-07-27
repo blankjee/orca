@@ -1,13 +1,5 @@
 import React, { useState } from 'react'
-import {
-  Circle,
-  LayoutDashboard,
-  LoaderCircle,
-  NotebookPen,
-  Save,
-  Sparkles,
-  Timer
-} from 'lucide-react'
+import * as Icons from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
@@ -18,7 +10,8 @@ import type {
 } from '../../../shared/obsidian-daily-todo'
 import type {
   ObsidianDailyTodoCandidate,
-  ObsidianDailyTodoCandidateSourceImage
+  ObsidianDailyTodoCandidateSourceImage,
+  ObsidianDailyTodoMonitorActivity
 } from '../../../shared/obsidian-daily-todo-candidate'
 import type { ObsidianDailyTodoAnalytics } from '../../../shared/obsidian-daily-todo-analytics'
 import {
@@ -61,6 +54,7 @@ type ObsidianDailyTodoWorkspaceProps = {
   candidateErrorMessage: string | null
   candidates: readonly ObsidianDailyTodoCandidate[]
   listeningForCandidates: boolean
+  monitorActivity: ObsidianDailyTodoMonitorActivity | null
   focusSession?: ObsidianDailyTodoFocusSession | null
   focusNow?: number
   focusBusy?: boolean
@@ -106,6 +100,7 @@ export function ObsidianDailyTodoWorkspace({
   candidateErrorMessage,
   candidates,
   listeningForCandidates,
+  monitorActivity,
   focusSession = null,
   focusNow = Date.now(),
   focusBusy = false,
@@ -175,6 +170,7 @@ export function ObsidianDailyTodoWorkspace({
               onSourceTextChange={onCandidateSourceTextChange}
               onSourceImageChange={onCandidateSourceImageChange}
               listening={listeningForCandidates}
+              monitorActivity={monitorActivity}
               onListeningChange={onListeningForCandidatesChange}
               onAnalyze={onAnalyzeCandidates}
               onAccept={onAcceptCandidate}
@@ -249,7 +245,7 @@ function WorkspaceModeBar({
         variant={mode === 'overview' ? 'secondary' : 'ghost'}
         onClick={() => onModeChange('overview')}
       >
-        <LayoutDashboard />
+        <Icons.LayoutDashboard />
         {translate('auto.components.ObsidianDailyTodoPanel.overviewTitle', 'Daily overview')}
       </Button>
       <Button
@@ -260,7 +256,7 @@ function WorkspaceModeBar({
         onClick={() => onModeChange('focus')}
         className="min-w-0"
       >
-        <Timer />
+        <Icons.Timer />
         <span className="truncate">
           {focusSession
             ? `${formatObsidianDailyTodoFocusClock(
@@ -276,7 +272,7 @@ function WorkspaceModeBar({
         disabled={!hasSelectedTodo}
         onClick={() => onModeChange('task')}
       >
-        <NotebookPen />
+        <Icons.NotebookPen />
         {translate('auto.components.ObsidianDailyTodoList.workRecord', 'Work record')}
       </Button>
       <Button
@@ -285,7 +281,7 @@ function WorkspaceModeBar({
         variant={mode === 'capture' ? 'secondary' : 'ghost'}
         onClick={() => onModeChange('capture')}
       >
-        <Sparkles />
+        <Icons.Sparkles />
         {translate('auto.components.ObsidianDailyTodoWorkspace.capture', 'Todo capture')}
         {candidateCount > 0 ? (
           <span className="rounded-full bg-muted px-1.5 text-[10px] tabular-nums">
@@ -343,7 +339,7 @@ function ObsidianDailyWorkRecordEditor({
           </div>
         </div>
         <Button type="button" size="sm" variant="outline" onClick={() => onAiExecute(todo)}>
-          <Sparkles />
+          <Icons.Sparkles />
           {translate('auto.components.ObsidianDailyTodoWorkspace.runWithAi', 'Run with AI')}
         </Button>
       </div>
@@ -371,11 +367,11 @@ function ObsidianDailyWorkRecordEditor({
             !dirty && 'invisible'
           )}
         >
-          <Circle className="size-2 fill-current" />
+          <Icons.Circle className="size-2 fill-current" />
           {translate('auto.components.ObsidianDailyTodoWorkspace.unsaved', 'Unsaved changes')}
         </span>
         <Button type="submit" disabled={saving || !dirty}>
-          {saving ? <LoaderCircle className="animate-spin" /> : <Save />}
+          {saving ? <Icons.LoaderCircle className="animate-spin" /> : <Icons.Save />}
           {translate('auto.components.ObsidianDailyWorkRecordSheet.save', 'Save')}
         </Button>
       </div>
@@ -386,7 +382,7 @@ function ObsidianDailyWorkRecordEditor({
 function WorkspaceEmptyState(): React.JSX.Element {
   return (
     <div className="flex h-full min-h-72 flex-col items-center justify-center px-6 text-center">
-      <NotebookPen className="mb-3 size-7 text-muted-foreground" />
+      <Icons.NotebookPen className="mb-3 size-7 text-muted-foreground" />
       <p className="text-sm font-medium">
         {translate('auto.components.ObsidianDailyTodoWorkspace.selectTask', 'Select a task')}
       </p>
