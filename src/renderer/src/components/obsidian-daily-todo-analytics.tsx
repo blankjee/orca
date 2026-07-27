@@ -187,7 +187,13 @@ function Metric({
 
 function AnalyticsLoadingState(): React.JSX.Element {
   return (
-    <section className="mt-4 space-y-3" aria-label="Loading long-term Todo analytics">
+    <section
+      className="mt-4 space-y-3"
+      aria-label={translate(
+        'auto.components.ObsidianDailyTodoAnalytics.loading',
+        'Loading long-term Todo analytics'
+      )}
+    >
       <div className="h-4 w-28 animate-pulse rounded bg-muted" />
       <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }, (_, index) => (

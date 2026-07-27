@@ -6570,7 +6570,18 @@
           "modelPlaceholder": "模型或推理接入点 ID",
           "confidenceLabel": "置信度阈值",
           "apiKeyLabel": "API 密钥",
-          "apiKeyDescription": "在系统支持时，使用操作系统凭据服务加密保护。"
+          "apiKeyDescription": "在系统支持时，使用操作系统凭据服务加密保护。",
+          "appAllowlistLabel": "监听应用白名单",
+          "appAllowlistDescription": "Orca 只读取和分析已选择应用中的文本。默认仅选择飞书。",
+          "customBundlePlaceholder": "自定义 Bundle ID，例如 com.example.app",
+          "addApp": "添加",
+          "removeApp": "移除 {{value0}}",
+          "emptyAllowlist": "尚未选择应用，自动监听将保持空闲。",
+          "phraseBlocklistLabel": "语句黑名单",
+          "phraseBlocklistDescription": "匹配的完整行会在展示和发送给 AI 前删除。",
+          "phraseBlocklistPlaceholder": "添加固定提示或模板语句",
+          "addPhrase": "添加语句",
+          "removePhrase": "移除黑名单语句 {{value0}}"
         },
         "TerminalAppearanceSection": {
           "a14a427ae4": "窗格分隔线的厚度。",
@@ -13165,7 +13176,9 @@
         "autoCaptured": "检测到潜在 Todo，正在分析…",
         "noCandidatesFound": "未找到候选 Todo，请尝试更明确的提醒或任务描述。",
         "monitorTitle": "macOS Todo 监听",
-        "monitorDescription": "Orca 会在你使用飞书等 Mac 应用时监听可访问文本变化，并通过 AI 将可能的行动项整理成候选 Todo，等待你确认。",
+        "monitorDescription": "Orca 只监听白名单内 Mac 应用的可访问文本变化，并通过 AI 将可能的行动项整理成候选 Todo。",
+        "monitorScope": "监听范围",
+        "allowedAppCount": "已允许 {{value0}} 个应用",
         "macOnly": "自动 Todo 监听目前仅支持 macOS。",
         "monitorActive": "正在监听",
         "monitorInactive": "监听未开启",
@@ -13236,6 +13249,7 @@
         "inProgressTasks": "{{value0}} 项任务正在推进",
         "activeDays": "活跃天数",
         "activeDaysDetail": "{{value0}} 年有 Todo 记录的天数",
+        "loading": "正在加载长期 Todo 数据",
         "empty": "今年暂无历史 Todo 数据",
         "emptyDescription": "添加带日期的 Markdown 日报后，长期趋势会显示在这里。"
       }

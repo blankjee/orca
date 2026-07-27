@@ -30,13 +30,23 @@ export function ObsidianTodoRecentTrend({
         'Daily task volume and completed work'
       )}
     >
-      <div className="flex h-36 items-end gap-1" aria-label="30-day Todo trend">
+      <div
+        className="flex h-36 items-end gap-1"
+        aria-label={translate(
+          'auto.components.ObsidianDailyTodoAnalytics.recentTrend',
+          'Last 30 days'
+        )}
+      >
         {days.map((day) => (
           <div key={day.date} className="flex h-full min-w-0 flex-1 flex-col justify-end">
             <div
               className="relative min-h-px w-full rounded-t-[2px] bg-muted-foreground/20"
               style={{ height: day.total > 0 ? `${(day.total / maxTotal) * 100}%` : 0 }}
-              aria-label={`${day.date}: ${day.completed} completed of ${day.total}`}
+              aria-label={`${day.date}: ${translate(
+                'auto.components.ObsidianDailyTodoAnalytics.completedOfTotal',
+                '{{value0}} of {{value1}} completed',
+                { value0: day.completed, value1: day.total }
+              )}`}
             >
               <div
                 className="absolute inset-x-0 bottom-0 rounded-t-[2px] bg-obsidian-daily-completed/75"
@@ -82,7 +92,14 @@ export function ObsidianTodoMonthlyTrend({
         'Completion rate by month'
       )}
     >
-      <div className="flex h-36 items-end gap-2" aria-label={`${analytics.year} monthly trend`}>
+      <div
+        className="flex h-36 items-end gap-2"
+        aria-label={translate(
+          'auto.components.ObsidianDailyTodoAnalytics.monthlyTrend',
+          '{{value0}} monthly trend',
+          { value0: analytics.year }
+        )}
+      >
         {months.map((month) => (
           <div
             key={month.month}
@@ -131,7 +148,11 @@ export function ObsidianTodoYearHeatmap({
           </div>
           <div
             className="grid auto-cols-[10px] grid-flow-col grid-rows-7 gap-1"
-            aria-label="Year Todo heatmap"
+            aria-label={translate(
+              'auto.components.ObsidianDailyTodoAnalytics.yearHeatmap',
+              '{{value0}} completion heatmap',
+              { value0: analytics.year }
+            )}
           >
             {Array.from({ length: mondayOffset }, (_, index) => (
               <span key={`offset-${index}`} className="size-2.5" aria-hidden="true" />
@@ -140,7 +161,11 @@ export function ObsidianTodoYearHeatmap({
               <span
                 key={day.date}
                 className={`size-2.5 rounded-[2px] border ${HEAT_INTENSITY_CLASS[day.intensity]}`}
-                aria-label={`${day.date}: ${day.completed} completed`}
+                aria-label={`${day.date}: ${translate(
+                  'auto.components.ObsidianDailyTodoAnalytics.completedOfTotal',
+                  '{{value0}} of {{value1}} completed',
+                  { value0: day.completed, value1: day.total }
+                )}`}
               />
             ))}
           </div>

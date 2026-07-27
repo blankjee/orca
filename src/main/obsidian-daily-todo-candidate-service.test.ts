@@ -16,7 +16,9 @@ describe('ObsidianDailyTodoCandidateService', () => {
         endpoint: ' https://ark.example/api/v3/ ',
         model: ' task-model ',
         apiKey: ' secret-key ',
-        confidenceThreshold: 0.82
+        confidenceThreshold: 0.82,
+        monitorAllowedBundleIds: ['com.bytedance.ee.lark'],
+        monitorIgnoredPhrases: ['沟通时请保持“公开可接受”']
       })
     ).toEqual({
       endpoint: 'https://ark.example/api/v3/',

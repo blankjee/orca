@@ -6622,7 +6622,18 @@
           "modelPlaceholder": "Model or endpoint ID",
           "confidenceLabel": "Confidence threshold",
           "apiKeyLabel": "API key",
-          "apiKeyDescription": "Protected with the operating system credential service when available."
+          "apiKeyDescription": "Protected with the operating system credential service when available.",
+          "appAllowlistLabel": "Monitored app allowlist",
+          "appAllowlistDescription": "Orca reads and analyzes text only from selected apps. Feishu is selected by default.",
+          "customBundlePlaceholder": "Custom bundle ID, e.g. com.example.app",
+          "addApp": "Add",
+          "removeApp": "Remove {{value0}}",
+          "emptyAllowlist": "No apps are selected. Automatic monitoring will remain idle.",
+          "phraseBlocklistLabel": "Ignored phrases",
+          "phraseBlocklistDescription": "Matching complete lines are removed before they are displayed or sent to AI.",
+          "phraseBlocklistPlaceholder": "Add a fixed prompt or boilerplate sentence",
+          "addPhrase": "Add phrase",
+          "removePhrase": "Remove ignored phrase {{value0}}"
         },
         "TerminalAppearanceSection": {
           "a14a427ae4": "Thickness of the pane divider line.",
@@ -13165,7 +13176,9 @@
         "autoCaptured": "Todo captured, extracting...",
         "noCandidatesFound": "No Todo candidates found. Try a more explicit reminder or task sentence.",
         "monitorTitle": "macOS Todo monitoring",
-        "monitorDescription": "Orca watches accessible text changes while you use Feishu and other Mac apps. AI turns likely action items into candidates for your review.",
+        "monitorDescription": "Orca watches accessible text changes only in allowlisted Mac apps. AI turns likely action items into candidates for your review.",
+        "monitorScope": "Monitoring scope",
+        "allowedAppCount": "Allowed apps: {{value0}}",
         "macOnly": "Automatic Todo monitoring is available on macOS.",
         "monitorActive": "Monitoring is active",
         "monitorInactive": "Monitoring is off",
@@ -13236,6 +13249,7 @@
         "inProgressTasks": "{{value0}} tasks in progress",
         "activeDays": "Active days",
         "activeDaysDetail": "Days with Todo activity in {{value0}}",
+        "loading": "Loading long-term Todo analytics",
         "empty": "No historical Todo data for this year",
         "emptyDescription": "Todo history appears here as dated Markdown notes are added."
       }

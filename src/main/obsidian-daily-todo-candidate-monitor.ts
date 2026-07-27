@@ -19,6 +19,8 @@ type CandidateServicePort = Pick<ObsidianDailyTodoCandidateService, 'analyzeText
 type InputMonitorPort = Pick<ObsidianDailyTodoInputMonitor, 'isRunning' | 'start' | 'stop'>
 type CandidateMonitorOptions = {
   monitor?: InputMonitorPort
+  allowedBundleIds?: () => readonly string[]
+  ignoredPhrases?: () => readonly string[]
   notify?: (
     webContents: WebContents | null,
     sourceApp: string,
@@ -40,7 +42,12 @@ export class ObsidianDailyTodoCandidateMonitorController {
     private readonly candidateService: CandidateServicePort,
     options: CandidateMonitorOptions = {}
   ) {
-    this.monitor = options.monitor ?? new ObsidianDailyTodoInputMonitor()
+    this.monitor =
+      options.monitor ??
+      new ObsidianDailyTodoInputMonitor({
+        allowedBundleIds: options.allowedBundleIds,
+        ignoredPhrases: options.ignoredPhrases
+      })
     this.notify = options.notify ?? showTodoCandidateNotification
   }
 

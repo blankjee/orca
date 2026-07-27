@@ -6585,7 +6585,18 @@
           "modelPlaceholder": "Modelo o ID de endpoint",
           "confidenceLabel": "Umbral de confianza",
           "apiKeyLabel": "Clave de API",
-          "apiKeyDescription": "Se protege con el servicio de credenciales del sistema operativo cuando está disponible."
+          "apiKeyDescription": "Se protege con el servicio de credenciales del sistema operativo cuando está disponible.",
+          "appAllowlistLabel": "Lista de aplicaciones supervisadas",
+          "appAllowlistDescription": "Orca solo lee y analiza texto de las aplicaciones seleccionadas. Feishu está seleccionado de forma predeterminada.",
+          "customBundlePlaceholder": "Bundle ID personalizado, p. ej. com.example.app",
+          "addApp": "Añadir",
+          "removeApp": "Quitar {{value0}}",
+          "emptyAllowlist": "No hay aplicaciones seleccionadas. La supervisión automática permanecerá inactiva.",
+          "phraseBlocklistLabel": "Frases ignoradas",
+          "phraseBlocklistDescription": "Las líneas completas coincidentes se eliminan antes de mostrarlas o enviarlas a la IA.",
+          "phraseBlocklistPlaceholder": "Añade un aviso fijo o una frase repetitiva",
+          "addPhrase": "Añadir frase",
+          "removePhrase": "Quitar frase ignorada {{value0}}"
         },
         "TerminalAppearanceSection": {
           "a14a427ae4": "Grosor de la línea divisoria del panel.",
@@ -13165,7 +13176,9 @@
         "autoCaptured": "Todo captured, extracting...",
         "noCandidatesFound": "No Todo candidates found. Try a more explicit reminder or task sentence.",
         "monitorTitle": "macOS Todo monitoring",
-        "monitorDescription": "Orca watches accessible text changes while you use Feishu and other Mac apps. AI turns likely action items into candidates for your review.",
+        "monitorDescription": "Orca watches accessible text changes only in allowlisted Mac apps. AI turns likely action items into candidates for your review.",
+        "monitorScope": "Ámbito de supervisión",
+        "allowedAppCount": "{{value0}} aplicaciones permitidas",
         "macOnly": "Automatic Todo monitoring is available on macOS.",
         "monitorActive": "Monitoring is active",
         "monitorInactive": "Monitoring is off",
@@ -13236,6 +13249,7 @@
         "inProgressTasks": "{{value0}} tasks in progress",
         "activeDays": "Active days",
         "activeDaysDetail": "Days with Todo activity in {{value0}}",
+        "loading": "Loading long-term Todo analytics",
         "empty": "No historical Todo data for this year",
         "emptyDescription": "Todo history appears here as dated Markdown notes are added."
       }

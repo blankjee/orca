@@ -6570,7 +6570,18 @@
           "modelPlaceholder": "모델 또는 엔드포인트 ID",
           "confidenceLabel": "신뢰도 임계값",
           "apiKeyLabel": "API 키",
-          "apiKeyDescription": "사용 가능한 경우 운영 체제 자격 증명 서비스로 보호됩니다."
+          "apiKeyDescription": "사용 가능한 경우 운영 체제 자격 증명 서비스로 보호됩니다.",
+          "appAllowlistLabel": "모니터링 앱 허용 목록",
+          "appAllowlistDescription": "Orca는 선택한 앱의 텍스트만 읽고 분석합니다. 기본값은 Feishu입니다.",
+          "customBundlePlaceholder": "사용자 지정 Bundle ID(예: com.example.app)",
+          "addApp": "추가",
+          "removeApp": "{{value0}} 제거",
+          "emptyAllowlist": "선택된 앱이 없어 자동 모니터링이 대기 상태로 유지됩니다.",
+          "phraseBlocklistLabel": "무시할 문구",
+          "phraseBlocklistDescription": "일치하는 전체 줄은 표시하거나 AI로 보내기 전에 제거됩니다.",
+          "phraseBlocklistPlaceholder": "고정 안내 또는 상용구 추가",
+          "addPhrase": "문구 추가",
+          "removePhrase": "무시할 문구 {{value0}} 제거"
         },
         "TerminalAppearanceSection": {
           "a14a427ae4": "창 구분선의 두께입니다.",
@@ -13165,7 +13176,9 @@
         "autoCaptured": "Todo captured, extracting...",
         "noCandidatesFound": "No Todo candidates found. Try a more explicit reminder or task sentence.",
         "monitorTitle": "macOS Todo monitoring",
-        "monitorDescription": "Orca watches accessible text changes while you use Feishu and other Mac apps. AI turns likely action items into candidates for your review.",
+        "monitorDescription": "Orca watches accessible text changes only in allowlisted Mac apps. AI turns likely action items into candidates for your review.",
+        "monitorScope": "모니터링 범위",
+        "allowedAppCount": "{{value0}}개 앱 허용",
         "macOnly": "Automatic Todo monitoring is available on macOS.",
         "monitorActive": "Monitoring is active",
         "monitorInactive": "Monitoring is off",
@@ -13236,6 +13249,7 @@
         "inProgressTasks": "{{value0}} tasks in progress",
         "activeDays": "Active days",
         "activeDaysDetail": "Days with Todo activity in {{value0}}",
+        "loading": "Loading long-term Todo analytics",
         "empty": "No historical Todo data for this year",
         "emptyDescription": "Todo history appears here as dated Markdown notes are added."
       }

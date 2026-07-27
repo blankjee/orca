@@ -76,4 +76,28 @@ describe('ObsidianDailyTodoInputMonitor', () => {
     )
     monitor.stop()
   })
+
+  it('passes the latest app allowlist into every accessibility poll', async () => {
+    const allowedBundleIds = vi
+      .fn<() => readonly string[]>()
+      .mockReturnValueOnce(['com.bytedance.ee.lark'])
+      .mockReturnValue(['com.tinyspeck.slackmacgap'])
+    vi.mocked(readObsidianDailyTodoAxSnapshot).mockResolvedValue(null)
+    const monitor = new ObsidianDailyTodoInputMonitor({ allowedBundleIds })
+
+    monitor.start(vi.fn())
+    await vi.advanceTimersByTimeAsync(850)
+
+    expect(readObsidianDailyTodoAxSnapshot).toHaveBeenNthCalledWith(
+      1,
+      ['com.bytedance.ee.lark'],
+      []
+    )
+    expect(readObsidianDailyTodoAxSnapshot).toHaveBeenNthCalledWith(
+      2,
+      ['com.tinyspeck.slackmacgap'],
+      []
+    )
+    monitor.stop()
+  })
 })

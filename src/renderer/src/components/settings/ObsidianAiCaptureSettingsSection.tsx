@@ -3,6 +3,7 @@ import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { SettingsBadge, SettingsSubsectionHeader, SettingsSwitchRow } from './SettingsFormControls'
 import { translate } from '@/i18n/i18n'
+import { ObsidianAiCaptureMonitorRules } from './ObsidianAiCaptureMonitorRules'
 
 type ObsidianAiCaptureSettingsSectionProps = {
   settings: ObsidianAiCaptureSettings
@@ -59,6 +60,14 @@ export function ObsidianAiCaptureSettingsSection({
         )}
         checked={settings.enabled}
         onChange={() => update({ enabled: !settings.enabled })}
+      />
+
+      <ObsidianAiCaptureMonitorRules
+        bundleIds={settings.monitorAllowedBundleIds}
+        ignoredPhrases={settings.monitorIgnoredPhrases}
+        disabled={!settings.enabled}
+        onBundleIdsChange={(monitorAllowedBundleIds) => update({ monitorAllowedBundleIds })}
+        onIgnoredPhrasesChange={(monitorIgnoredPhrases) => update({ monitorIgnoredPhrases })}
       />
 
       <div className="grid max-w-2xl gap-4 sm:grid-cols-2">

@@ -20,6 +20,10 @@ export type ObsidianDailyTodoInputMonitorEvent = {
 
 type InputCallback = (event: ObsidianDailyTodoInputMonitorEvent) => void | Promise<void>
 type ErrorCallback = (message: string) => void
+type ObsidianDailyTodoInputMonitorOptions = {
+  allowedBundleIds?: () => readonly string[]
+  ignoredPhrases?: () => readonly string[]
+}
 
 const POLL_INTERVAL_MS = 400
 const MIN_TEXT_LEN = 2
@@ -100,6 +104,8 @@ export class ObsidianDailyTodoInputMonitor {
   private pendingStableKey = ''
   private lastEmittedText = ''
 
+  constructor(private readonly options: ObsidianDailyTodoInputMonitorOptions = {}) {}
+
   get isRunning(): boolean {
     return this.started
   }
@@ -157,8 +163,15 @@ export class ObsidianDailyTodoInputMonitor {
     }
     this.polling = true
     try {
-      const snapshot = await readObsidianDailyTodoAxSnapshot()
+      const snapshot = await readObsidianDailyTodoAxSnapshot(
+        this.options.allowedBundleIds?.() ?? [],
+        this.options.ignoredPhrases?.() ?? []
+      )
       if (!snapshot) {
+        return
+      }
+      if (snapshot.monitored === false) {
+        this.resetState()
         return
       }
       if (IGNORED_BUNDLE_IDS.has(snapshot.bundleId)) {

@@ -57,6 +57,8 @@ module.exports = {
     // Why: out/ is gitignored, and electron-builder's default matcher can omit
     // the renderer tree even after a successful production build.
     { from: 'out/renderer', to: 'out/renderer', filter: ['**/*'] },
+    '!.git{,/**/*}',
+    '!.codex{,/**/*}',
     '!**/.vscode/*',
     // Why: these repo-only inputs are either bundled into out/ or copied via
     // extraResources. Shipping them in app.asar bloats the desktop bundle.
@@ -66,6 +68,11 @@ module.exports = {
     '!mobile{,/**/*}',
     '!native{,/**/*}',
     '!skills{,/**/*}',
+    // Why: interrupted local packaging can leave nested .app bundles here.
+    // Never feed previous installer output back into the next app.asar.
+    '!dist{,/**/*}',
+    '!out/electron-dev{,/**/*}',
+    '!out/web{,/**/*}',
     // Why: authoritative guide markdown is compiled into out/cli; shipping the
     // authoring sources too would duplicate content without a runtime consumer.
     '!skill-guides{,/**/*}',

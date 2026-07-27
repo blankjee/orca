@@ -40,11 +40,24 @@ describe('ObsidianDailyTodoCandidatePanel', () => {
     )
 
     expect(screen.queryByRole('textbox')).toBeNull()
+    expect(screen.getByText('Allowed apps: 1')).toBeTruthy()
+    fireEvent.click(screen.getByText('Monitoring scope'))
+    expect(screen.getByRole('checkbox', { name: '飞书' }).getAttribute('data-state')).toBe(
+      'checked'
+    )
+    expect(screen.getByRole('checkbox', { name: 'Slack' }).getAttribute('data-state')).toBe(
+      'unchecked'
+    )
+    expect(screen.getByText('沟通时请保持“公开可接受”')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Start monitoring' }))
     expect(onListeningChange).toHaveBeenCalledWith(true)
 
     fireEvent.click(screen.getByText('Analyze text or image'))
-    expect(screen.getByRole('textbox')).toBeTruthy()
+    expect(
+      screen.getByPlaceholderText(
+        'Paste chat text or a screenshot. AI will extract goals, context, owners, timing, and expected results.'
+      )
+    ).toBeTruthy()
   })
 
   it('accepts a pasted image as a manual analysis source', async () => {

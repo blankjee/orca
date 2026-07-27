@@ -1,11 +1,22 @@
 import React, { useState } from 'react'
-import { Check, ChevronDown, Inbox, LoaderCircle, Radio, Sparkles, Trash2 } from 'lucide-react'
+import {
+  Check,
+  ChevronDown,
+  Inbox,
+  LoaderCircle,
+  Radio,
+  ShieldCheck,
+  Sparkles,
+  Trash2
+} from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Input } from '@/components/ui/input'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
+import { useAppStore } from '@/store'
+import { normalizeObsidianAiCaptureSettings } from '../../../shared/obsidian-ai-capture-settings'
 import type {
   ObsidianDailyTodoCandidate,
   ObsidianDailyTodoCandidatePriority,
@@ -15,6 +26,7 @@ import type {
 import { ObsidianDailyTodoCandidateDetails } from './obsidian-daily-todo-candidate-details'
 import { ObsidianDailyTodoCandidateSourceInput } from './obsidian-daily-todo-candidate-source-input'
 import { ObsidianDailyTodoMonitorActivityCard } from './obsidian-daily-todo-monitor-activity'
+import { ObsidianAiCaptureMonitorRules } from './settings/ObsidianAiCaptureMonitorRules'
 
 type ObsidianDailyTodoCandidatePanelProps = {
   candidates: readonly ObsidianDailyTodoCandidate[]
@@ -58,6 +70,10 @@ export function ObsidianDailyTodoCandidatePanel({
   onDismiss
 }: ObsidianDailyTodoCandidatePanelProps): React.JSX.Element {
   const [manualOpen, setManualOpen] = useState(false)
+  const [allowlistOpen, setAllowlistOpen] = useState(false)
+  const settings = useAppStore((state) => state.settings)
+  const updateSettings = useAppStore((state) => state.updateSettings)
+  const aiCaptureSettings = normalizeObsidianAiCaptureSettings(settings?.obsidianAiCapture)
   const isMac = navigator.userAgent.includes('Mac')
   return (
     <section className="overflow-hidden rounded-lg border border-border bg-card">
@@ -82,7 +98,7 @@ export function ObsidianDailyTodoCandidatePanel({
               {isMac
                 ? translate(
                     'auto.components.ObsidianDailyTodoCandidatePanel.monitorDescription',
-                    'Orca watches accessible text changes while you use Feishu and other Mac apps. AI turns likely action items into candidates for your review.'
+                    'Orca watches accessible text changes only in allowlisted Mac apps. AI turns likely action items into candidates for your review.'
                   )
                 : translate(
                     'auto.components.ObsidianDailyTodoCandidatePanel.macOnly',
@@ -122,6 +138,49 @@ export function ObsidianDailyTodoCandidatePanel({
               )}
         </Button>
       </div>
+
+      <Collapsible
+        open={allowlistOpen}
+        onOpenChange={setAllowlistOpen}
+        className="border-b border-border"
+      >
+        <CollapsibleTrigger className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-xs text-muted-foreground hover:bg-accent hover:text-foreground">
+          <ChevronDown
+            className={cn('size-3.5 transition-transform', !allowlistOpen && '-rotate-90')}
+          />
+          <ShieldCheck className="size-3.5" />
+          <span className="font-medium">
+            {translate(
+              'auto.components.ObsidianDailyTodoCandidatePanel.monitorScope',
+              'Monitoring scope'
+            )}
+          </span>
+          <span className="ml-auto tabular-nums">
+            {translate(
+              'auto.components.ObsidianDailyTodoCandidatePanel.allowedAppCount',
+              'Allowed apps: {{value0}}',
+              { value0: aiCaptureSettings.monitorAllowedBundleIds.length }
+            )}
+          </span>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="px-4 pb-4">
+          <ObsidianAiCaptureMonitorRules
+            bundleIds={aiCaptureSettings.monitorAllowedBundleIds}
+            ignoredPhrases={aiCaptureSettings.monitorIgnoredPhrases}
+            disabled={disabled || !aiCaptureSettings.enabled}
+            onBundleIdsChange={(monitorAllowedBundleIds) =>
+              void updateSettings({
+                obsidianAiCapture: { ...aiCaptureSettings, monitorAllowedBundleIds }
+              })
+            }
+            onIgnoredPhrasesChange={(monitorIgnoredPhrases) =>
+              void updateSettings({
+                obsidianAiCapture: { ...aiCaptureSettings, monitorIgnoredPhrases }
+              })
+            }
+          />
+        </CollapsibleContent>
+      </Collapsible>
 
       <ObsidianDailyTodoMonitorActivityCard activity={monitorActivity} listening={listening} />
 

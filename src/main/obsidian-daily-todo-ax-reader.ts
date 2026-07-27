@@ -6,6 +6,7 @@ export type ObsidianDailyTodoAxSnapshot = {
   windowTitle: string
   role: string
   value: string
+  monitored?: boolean
 }
 
 export class ObsidianDailyTodoAxPermissionError extends Error {
@@ -20,6 +21,7 @@ const TIMEOUT_MS = 3000
 let lastErrorLogAt = 0
 
 const SCRIPT = `set sep to "${SEP}"
+set allowedBundleIds to {__ALLOWED_BUNDLE_IDS__}
 
 on getVal(elem)
 	tell application "System Events"
@@ -101,6 +103,9 @@ tell application "System Events"
 		try
 			set pname to name of p
 		end try
+		if allowedBundleIds does not contain bid then
+			return bid & sep & pname & sep & "" & sep & "" & sep & "0" & sep & ""
+		end if
 		set winTitle to ""
 		try
 			set winTitle to name of front window of p
@@ -122,17 +127,25 @@ tell application "System Events"
 				set valStr to my collectText(front window of p, 320, 8000)
 			end try
 		end if
-		return bid & sep & pname & sep & winTitle & sep & roleStr & sep & valStr
+		return bid & sep & pname & sep & winTitle & sep & roleStr & sep & "1" & sep & valStr
 	on error errMsg number errNum
-		return "ERROR" & sep & errNum & sep & errMsg & sep & "" & sep & ""
+		return "ERROR" & sep & errNum & sep & errMsg & sep & "" & sep & "0" & sep & ""
 	end try
 end tell`
 
-export function readObsidianDailyTodoAxSnapshot(): Promise<ObsidianDailyTodoAxSnapshot | null> {
+export function readObsidianDailyTodoAxSnapshot(
+  allowedBundleIds: readonly string[] = [],
+  ignoredPhrases: readonly string[] = []
+): Promise<ObsidianDailyTodoAxSnapshot | null> {
   return new Promise((resolve, reject) => {
+    const allowedBundleIdList = allowedBundleIds
+      .filter((bundleId) => /^[A-Za-z0-9.-]{3,160}$/.test(bundleId))
+      .map((bundleId) => `"${bundleId}"`)
+      .join(', ')
+    const script = SCRIPT.replace('__ALLOWED_BUNDLE_IDS__', allowedBundleIdList)
     const child = execFile(
       '/usr/bin/osascript',
-      ['-e', SCRIPT],
+      ['-e', script],
       { timeout: TIMEOUT_MS, maxBuffer: 1024 * 1024 },
       (error, stdout, stderr) => {
         if (error) {
@@ -152,7 +165,7 @@ export function readObsidianDailyTodoAxSnapshot(): Promise<ObsidianDailyTodoAxSn
           return
         }
         const parts = raw.split(SEP)
-        if (parts.length < 5) {
+        if (parts.length < 6) {
           resolve(null)
           return
         }
@@ -171,10 +184,32 @@ export function readObsidianDailyTodoAxSnapshot(): Promise<ObsidianDailyTodoAxSn
           appName: parts[1] || 'Unknown',
           windowTitle: parts[2] || '',
           role: parts[3] || '',
-          value: parts.slice(4).join(SEP)
+          monitored: parts[4] === '1',
+          value: removeIgnoredPhrases(parts.slice(5).join(SEP), ignoredPhrases)
         })
       }
     )
     child.on('error', () => resolve(null))
   })
+}
+
+function removeIgnoredPhrases(value: string, ignoredPhrases: readonly string[]): string {
+  const ignored = new Set(
+    ignoredPhrases.map(normalizeIgnoredPhrase).filter((phrase) => phrase.length > 0)
+  )
+  if (ignored.size === 0) {
+    return value
+  }
+  return value
+    .split(/\r?\n/u)
+    .filter((line) => !ignored.has(normalizeIgnoredPhrase(line)))
+    .join('\n')
+    .trim()
+}
+
+function normalizeIgnoredPhrase(value: string): string {
+  return value
+    .trim()
+    .replace(/[“”]/gu, '"')
+    .replace(/\s+/gu, ' ')
 }

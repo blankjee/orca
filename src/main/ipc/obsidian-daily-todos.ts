@@ -37,6 +37,7 @@ import type {
   ObsidianDailyTodoCandidateUpdateInput
 } from '../../shared/obsidian-daily-todo-candidate'
 import { registerObsidianDailyTodoFocusHandlers } from './obsidian-daily-todo-focus'
+import { normalizeObsidianAiCaptureSettings } from '../../shared/obsidian-ai-capture-settings'
 
 export function registerObsidianDailyTodoHandlers(store: Pick<Store, 'getSettings'>): void {
   registerObsidianDailyTodoFocusHandlers()
@@ -44,7 +45,16 @@ export function registerObsidianDailyTodoHandlers(store: Pick<Store, 'getSetting
     // Why: read on every analysis so saving Settings takes effect without an app restart.
     analyzerConfig: () => readCandidateAnalyzerConfig(store.getSettings().obsidianAiCapture)
   })
-  const candidateMonitor = new ObsidianDailyTodoCandidateMonitorController(candidateService)
+  const candidateMonitor = new ObsidianDailyTodoCandidateMonitorController(candidateService, {
+    // Why: the reader consults persisted settings on every poll so whitelist
+    // changes take effect immediately without restarting an active monitor.
+    allowedBundleIds: () =>
+      normalizeObsidianAiCaptureSettings(store.getSettings().obsidianAiCapture)
+        .monitorAllowedBundleIds,
+    ignoredPhrases: () =>
+      normalizeObsidianAiCaptureSettings(store.getSettings().obsidianAiCapture)
+        .monitorIgnoredPhrases
+  })
   ipcMain.handle(
     'obsidianDailyTodos:analytics',
     (_event, args: { directory?: unknown; year?: unknown; refresh?: unknown }) => {

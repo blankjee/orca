@@ -2196,7 +2196,9 @@ describe('Store', () => {
         endpoint: 'https://ark.example/api/v3',
         model: 'doubao-task-model',
         apiKey: 'secret-api-key',
-        confidenceThreshold: 0.82
+        confidenceThreshold: 0.82,
+        monitorAllowedBundleIds: ['com.bytedance.ee.lark', 'com.tinyspeck.slackmacgap'],
+        monitorIgnoredPhrases: ['沟通时请保持“公开可接受”']
       }
     })
     store.flush()
@@ -2206,7 +2208,9 @@ describe('Store', () => {
       enabled: true,
       endpoint: 'https://ark.example/api/v3',
       model: 'doubao-task-model',
-      confidenceThreshold: 0.82
+      confidenceThreshold: 0.82,
+      monitorAllowedBundleIds: ['com.bytedance.ee.lark', 'com.tinyspeck.slackmacgap'],
+      monitorIgnoredPhrases: ['沟通时请保持“公开可接受”']
     })
     expect(persisted.settings.obsidianAiCapture?.apiKey).not.toBe('secret-api-key')
 
@@ -2216,7 +2220,9 @@ describe('Store', () => {
       endpoint: 'https://ark.example/api/v3',
       model: 'doubao-task-model',
       apiKey: 'secret-api-key',
-      confidenceThreshold: 0.82
+      confidenceThreshold: 0.82,
+      monitorAllowedBundleIds: ['com.bytedance.ee.lark', 'com.tinyspeck.slackmacgap'],
+      monitorIgnoredPhrases: ['沟通时请保持“公开可接受”']
     })
   })
 
@@ -2231,7 +2237,9 @@ describe('Store', () => {
           endpoint: 123,
           model: 'valid-model',
           apiKey: null,
-          confidenceThreshold: 4
+          confidenceThreshold: 4,
+          monitorAllowedBundleIds: ['bad id', 'com.bytedance.ee.lark', 'com.bytedance.ee.lark'],
+          monitorIgnoredPhrases: ['', '固定提示', '固定提示']
         }
       }
     })
@@ -2242,7 +2250,9 @@ describe('Store', () => {
       endpoint: '',
       model: 'valid-model',
       apiKey: '',
-      confidenceThreshold: 0.75
+      confidenceThreshold: 0.75,
+      monitorAllowedBundleIds: ['com.bytedance.ee.lark'],
+      monitorIgnoredPhrases: ['固定提示']
     })
   })
 
