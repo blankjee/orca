@@ -1,0 +1,53 @@
+src/main/obsidian-daily-todo-candidate-analyzer.test.ts
+  s_8cf6fa83a5bc6c::t_295228a2e27722 1,3-6,16-21,42-47,102-152
+src/main/obsidian-daily-todo-candidate-service.test.ts
+  s_8cf6fa83a5bc6c::t_0d757a0a1fdc1d 101-107,126-132
+src/main/obsidian-daily-todo-candidate-service.ts
+  s_8cf6fa83a5bc6c::t_dbde711b79cd71 125,131-132,172-200
+src/main/obsidian-daily-todo-service.ts
+  s_8cf6fa83a5bc6c::t_106e0a010cc639 91-93,96-106
+src/renderer/src/components/obsidian-daily-todo-candidate-panel.tsx
+  s_8cf6fa83a5bc6c::t_28955acd8ca759 11-12,14-15,20,27,43,50,187,191-199,241
+src/renderer/src/components/obsidian-daily-todo-panel-content.tsx
+  s_8cf6fa83a5bc6c::t_8175a34ab98a2e 11-14,62,82,129,149,316,331
+src/renderer/src/components/obsidian-daily-todo-panel-overlays.tsx
+  s_8cf6fa83a5bc6c::t_f1e79db42aa8df 7-10,26,32,53,59,102,109
+src/renderer/src/components/obsidian-daily-todo-workspace.test.tsx
+  s_8cf6fa83a5bc6c::t_96fab4b51cde4a 56,71
+src/renderer/src/components/obsidian-daily-todo-workspace.tsx
+  s_8cf6fa83a5bc6c::t_fd264f266cc46f 19-22,58,77,103,118,170,176
+src/renderer/src/components/use-obsidian-daily-todo-candidates.ts
+  s_8cf6fa83a5bc6c::t_3ab813c8bd3588 9-10,29,35,45-46,113,121,127,232,238
+src/renderer/src/i18n/locales/en.json
+  s_8cf6fa83a5bc6c::t_8deb735938fe9a 13157,13160,13178-13194
+src/renderer/src/i18n/locales/es.json
+  s_8cf6fa83a5bc6c::t_a852b65527204b 13157,13160,13178-13194
+src/renderer/src/i18n/locales/ja.json
+  s_8cf6fa83a5bc6c::t_45bfcdd8280a39 13157,13160,13178-13194
+src/renderer/src/i18n/locales/ko.json
+  s_8cf6fa83a5bc6c::t_6b57a96cf3e87d 13157,13160,13178-13194
+src/renderer/src/i18n/locales/zh.json
+  s_8cf6fa83a5bc6c::t_b0ba2060165031 13157,13160,13178-13194
+src/shared/obsidian-daily-todo-candidate.ts
+  s_8cf6fa83a5bc6c::t_fd83a760ced978 10-26,31-36,38,65,127-134
+src/shared/obsidian-daily-todo.ts
+  s_8cf6fa83a5bc6c::t_89e5a88b850b8b 70
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "836235d0039f60cae86225705a5f987ffce06c0a",
+  "prompts": {},
+  "sessions": {
+    "s_8cf6fa83a5bc6c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f87d7-20ee-72a2-8cd5-a1534315ab6c",
+        "model": "unknown"
+      },
+      "human_author": "huangjie.sc <huangjie.sc@bytedance.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
