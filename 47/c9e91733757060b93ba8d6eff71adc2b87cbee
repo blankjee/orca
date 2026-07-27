@@ -1,0 +1,33 @@
+config/electron-builder.config.cjs
+  s_8cf6fa83a5bc6c::t_903c9a0d68d42b 60-61,71-75
+src/main/ipc/obsidian-daily-todos.ts
+  s_8cf6fa83a5bc6c::t_43c5d2159ad226 40,48-57
+src/main/obsidian-daily-todo-candidate-monitor.ts
+  s_8cf6fa83a5bc6c::t_ecc1547fa6dd3f 22-23,45-50
+src/main/obsidian-daily-todo-input-monitor.test.ts
+  s_8cf6fa83a5bc6c::t_243f3a1db15c4b 79-102
+src/main/obsidian-daily-todo-input-monitor.ts
+  s_8cf6fa83a5bc6c::t_fcf3ae243663eb 23-26,107-108,166-169,173-176
+src/renderer/src/components/obsidian-daily-todo-analytics-charts.tsx
+  s_8cf6fa83a5bc6c::t_c9835b5e93a612 33-39,45-49,95-102,151-155,164-168
+src/renderer/src/components/obsidian-daily-todo-analytics.tsx
+  s_8cf6fa83a5bc6c::t_8cc2b2c8713b43 190-196
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "47c9e91733757060b93ba8d6eff71adc2b87cbee",
+  "prompts": {},
+  "sessions": {
+    "s_8cf6fa83a5bc6c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f87d7-20ee-72a2-8cd5-a1534315ab6c",
+        "model": "unknown"
+      },
+      "human_author": "huangjie.sc <huangjie.sc@bytedance.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
