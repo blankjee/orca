@@ -1,0 +1,39 @@
+src/main/ipc/obsidian-daily-todos.ts
+  s_8cf6fa83a5bc6c::t_bd47900a1eb577 1,184-191
+src/main/obsidian-daily-todo-ax-reader.ts
+  s_8cf6fa83a5bc6c::t_3575c6f8c49e99 11-17,110,115-116,118,122,132,159-168
+src/main/obsidian-daily-todo-candidate-monitor.test.ts
+  s_8cf6fa83a5bc6c::t_1ccb61660e3aae 12,14-17,20,26,32-35,65-89
+src/main/obsidian-daily-todo-candidate-monitor.ts
+  s_8cf6fa83a5bc6c::t_a3a4f0c0ac25b5 56-59,78-85
+src/main/obsidian-daily-todo-input-monitor.test.ts
+  s_8cf6fa83a5bc6c::t_9744d8ec262491 61-78
+src/main/obsidian-daily-todo-input-monitor.ts
+  s_8cf6fa83a5bc6c::t_654385b54336d2 22,24,28,93,107,110,114,131,175-177
+src/preload/api-types.ts
+  s_8cf6fa83a5bc6c::t_39ce79efc27616 2334
+src/preload/index.ts
+  s_8cf6fa83a5bc6c::t_985fea29f6948a 2356-2361
+src/renderer/src/components/use-obsidian-daily-todo-candidates.ts
+  s_8cf6fa83a5bc6c::t_b28aed9a4f7df8 114,116-118
+src/shared/obsidian-daily-todo-candidate.ts
+  s_8cf6fa83a5bc6c::t_1a1e1d962c67c4 132-136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "a5a0319d01cae2a75931161134c83949a4c80b84",
+  "prompts": {},
+  "sessions": {
+    "s_8cf6fa83a5bc6c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f87d7-20ee-72a2-8cd5-a1534315ab6c",
+        "model": "unknown"
+      },
+      "human_author": "huangjie.sc <huangjie.sc@bytedance.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
