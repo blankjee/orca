@@ -7,10 +7,21 @@ export function addObsidianDailyTodo(
   markdown: string,
   input: Pick<ObsidianDailyTodoAddInput, 'text' | 'group' | 'priority'>
 ): string {
+  return insertObsidianDailyTodoLines(markdown, input.group ?? null, input.priority ?? null, [
+    `- [ ] ${input.text.trim()}`
+  ])
+}
+
+export function insertObsidianDailyTodoLines(
+  markdown: string,
+  group: string | null,
+  priority: ObsidianDailyTodoItem['priority'],
+  todoLines: readonly string[]
+): string {
   const newline = markdown.includes('\r\n') ? '\r\n' : '\n'
   const lines = markdown.split(/\r?\n/)
-  const insertion = findTodoInsertion(lines, input.group ?? null, input.priority ?? null)
-  lines.splice(insertion.index, 0, ...insertion.prefix, `- [ ] ${input.text.trim()}`)
+  const insertion = findTodoInsertion(lines, group, priority)
+  lines.splice(insertion.index, 0, ...insertion.prefix, ...todoLines)
   return lines.join(newline)
 }
 

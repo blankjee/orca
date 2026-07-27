@@ -362,9 +362,12 @@ Integration points:
 
 ## Settings
 
-First version can use environment variables, then graduate to Settings UI.
+AI Capture is configured from Orca Settings → Tasks. The API key is protected
+with Electron `safeStorage` before the settings file is written when OS-backed
+encryption is available.
 
-Suggested env keys:
+Environment variables remain a compatibility fallback when no saved
+configuration exists:
 
 ```text
 TODO_CAPTURE_LLM_ENDPOINT=
@@ -373,7 +376,7 @@ TODO_CAPTURE_LLM_API_KEY=
 TODO_CAPTURE_CONFIDENCE_THRESHOLD=0.75
 ```
 
-Future Settings UI fields:
+Settings UI fields:
 
 - Enable AI Capture
 - Endpoint

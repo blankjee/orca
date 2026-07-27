@@ -28,7 +28,9 @@ export function useObsidianDailyTodoCandidates({
   candidates: ObsidianDailyTodoCandidate[]
   candidateError: string | null
   busyCandidateIds: Set<string>
+  listeningForCandidates: boolean
   setCandidateSourceText: (value: string) => void
+  setListeningForCandidates: (value: boolean) => void
   analyzeCandidates: () => Promise<void>
   acceptCandidate: (
     candidate: ObsidianDailyTodoCandidate,
@@ -40,6 +42,7 @@ export function useObsidianDailyTodoCandidates({
   const [candidates, setCandidates] = useState<ObsidianDailyTodoCandidate[]>([])
   const [candidateError, setCandidateError] = useState<string | null>(null)
   const [busyCandidateIds, setBusyCandidateIds] = useState<Set<string>>(new Set())
+  const [listeningForCandidates, setListeningForCandidatesState] = useState(false)
 
   const loadCandidates = useCallback(async (): Promise<void> => {
     const result = await window.api.obsidianDailyTodos.candidates.list()
@@ -55,6 +58,50 @@ export function useObsidianDailyTodoCandidates({
     void loadCandidates()
   }, [loadCandidates])
 
+  useEffect(() => {
+    return window.api.obsidianDailyTodos.candidates.onChanged(((event?: {
+      source?: string
+      sourceText?: string
+    }) => {
+      void loadCandidates()
+      if (event?.source === 'monitor-captured') {
+        toast.info(
+          translate(
+            'auto.components.ObsidianDailyTodoCandidatePanel.autoCaptured',
+            'Potential Todo detected, analyzing...'
+          )
+        )
+        return
+      }
+      toast.success(
+        translate(
+          'auto.components.ObsidianDailyTodoCandidatePanel.autoCaptured',
+          'Todo candidate captured'
+        )
+      )
+    }) as () => void)
+  }, [loadCandidates])
+
+  useEffect(() => {
+    return window.api.obsidianDailyTodos.candidates.onMonitorError((message) => {
+      setCandidateError(message)
+    })
+  }, [])
+
+  useEffect(() => {
+    void window.api.obsidianDailyTodos.candidates.monitorStatus().then((result) => {
+      if (result.ok) {
+        setListeningForCandidatesState(result.running)
+      }
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!snapshot?.filePath && listeningForCandidates) {
+      void stopMonitor()
+    }
+  }, [listeningForCandidates, snapshot?.filePath])
+
   const analyzeCandidates = async (): Promise<void> => {
     const filePath = snapshot?.filePath
     const sourceText = candidateSourceText.trim()
@@ -69,10 +116,49 @@ export function useObsidianDailyTodoCandidates({
       existingTodos: snapshot?.todos ?? []
     })
     applyCandidateAnalyzeResult(result, setCandidates, setCandidateError)
-    if (result.ok) {
+    if (result.ok && result.candidates.length > 0) {
       setCandidateSourceText('')
+    } else if (result.ok) {
+      setCandidateError(
+        translate(
+          'auto.components.ObsidianDailyTodoCandidatePanel.noCandidatesFound',
+          'No Todo candidates found. Try a more explicit reminder or task sentence.'
+        )
+      )
     } else {
       toast.error(result.message)
+    }
+  }
+
+  const startMonitor = async (): Promise<void> => {
+    const filePath = snapshot?.filePath
+    if (!filePath) {
+      return
+    }
+    const result = await window.api.obsidianDailyTodos.candidates.startMonitor({
+      directory,
+      filePath
+    })
+    if (result.ok) {
+      setListeningForCandidatesState(result.running)
+    } else {
+      setCandidateError(result.message)
+      toast.error(result.message)
+    }
+  }
+
+  const stopMonitor = async (): Promise<void> => {
+    const result = await window.api.obsidianDailyTodos.candidates.stopMonitor()
+    if (result.ok) {
+      setListeningForCandidatesState(result.running)
+    }
+  }
+
+  const setListeningForCandidates = (value: boolean): void => {
+    if (value) {
+      void startMonitor()
+    } else {
+      void stopMonitor()
     }
   }
 
@@ -139,7 +225,9 @@ export function useObsidianDailyTodoCandidates({
     candidates,
     candidateError,
     busyCandidateIds,
+    listeningForCandidates,
     setCandidateSourceText,
+    setListeningForCandidates,
     analyzeCandidates,
     acceptCandidate,
     dismissCandidate

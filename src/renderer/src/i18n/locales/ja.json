@@ -6594,6 +6594,21 @@
           "obsidianDirectoryPlaceholder": "Choose the folder containing daily notes",
           "chooseDirectory": "Choose"
         },
+        "ObsidianAiCaptureSettingsSection": {
+          "title": "AI Capture",
+          "configured": "設定済み",
+          "notConfigured": "未設定",
+          "description": "OpenAI Responses 互換エンドポイントを使用して、取得したテキストから Todo 候補を抽出します。",
+          "enableLabel": "AI Capture を有効にする",
+          "enableDescription": "保存したプロバイダー設定を Obsidian Todo の抽出に使用します。",
+          "endpointLabel": "エンドポイント",
+          "endpointPlaceholder": "https://ark.cn-beijing.volces.com/api/v3",
+          "modelLabel": "モデル",
+          "modelPlaceholder": "モデルまたはエンドポイント ID",
+          "confidenceLabel": "信頼度のしきい値",
+          "apiKeyLabel": "API キー",
+          "apiKeyDescription": "利用可能な場合は OS の資格情報サービスで保護されます。"
+        },
         "TerminalAppearanceSection": {
           "a14a427ae4": "ペイン分割線の太さ。",
           "f27a99978d": "ディバイダーの厚さ",
@@ -8203,6 +8218,7 @@
         "tasks": {
           "search": {
             "58cda6f9c0": "非表示",
+            "aiCapture": "obsidian ai capture todo 抽出 エンドポイント モデル api キー 信頼度",
             "44083ae418": "画面",
             "604d8e4089": "アトラシアン",
             "5430396e11": "Jira",
@@ -13072,7 +13088,8 @@
         "createTodayInObsidian": "Create today’s note in Obsidian",
         "noFilteredTasks": "No tasks match this filter.",
         "clearFilter": "Show all tasks",
-        "weekNavigation": "Week navigation"
+        "weekNavigation": "Week navigation",
+        "candidateAdded": "Todo added"
       },
       "ObsidianDailyTodoList": {
         "noPriority": "No priority",
@@ -13084,7 +13101,13 @@
         "runWithAi": "この Todo を AI で実行",
         "editTask": "Edit task",
         "doubleClickToEdit": "Double-click to edit: {{value0}}",
-        "workRecord": "Work record"
+        "workRecord": "Work record",
+        "changePriority": "Change priority for {{value0}}",
+        "deleteTask": "Delete task",
+        "deleteTaskTitle": "Delete this task?",
+        "deleteTaskDescription": "“{{value0}}” will be removed from the daily note. Nested tasks are removed with it.",
+        "cancel": "Cancel",
+        "delete": "Delete"
       },
       "ObsidianDailyNotePicker": {
         "label": "Select a daily note",
@@ -13125,6 +13148,74 @@
         "placeholder": "Record progress, decisions, links, and follow-ups in Markdown…",
         "cancel": "Cancel",
         "save": "Save"
+      },
+      "ObsidianDailyTodoCandidatePanel": {
+        "title": "AI Capture",
+        "listening": "Listening",
+        "listen": "Listen",
+        "listeningPlaceholder": "Listening to clipboard. Copy reminder text from Feishu...",
+        "placeholder": "Paste text to extract candidate Todos...",
+        "listenHint": "Copies with reminder signals are extracted for review.",
+        "safeHint": "Nothing is added until you click Add to today.",
+        "analyze": "Extract Todos",
+        "source": "Original text",
+        "addToToday": "Add to today",
+        "dismiss": "Dismiss",
+        "group": "Group",
+        "autoCaptured": "Todo captured, extracting...",
+        "noCandidatesFound": "No Todo candidates found. Try a more explicit reminder or task sentence.",
+        "monitorTitle": "macOS Todo monitoring",
+        "monitorDescription": "Orca watches accessible text changes while you use Feishu and other Mac apps. AI turns likely action items into candidates for your review.",
+        "macOnly": "Automatic Todo monitoring is available on macOS.",
+        "monitorActive": "Monitoring is active",
+        "monitorInactive": "Monitoring is off",
+        "stopMonitoring": "Stop monitoring",
+        "startMonitoring": "Start monitoring",
+        "candidates": "Candidate Todos",
+        "candidateCount": "{{value0}} pending",
+        "noPendingCandidates": "No pending candidates",
+        "noPendingCandidatesDescription": "When monitoring detects a likely action item, it will appear here for confirmation.",
+        "manualCapture": "Analyze text manually",
+        "sheetDescription": "Monitor Mac apps for possible action items and review candidates before adding them."
+      },
+      "ObsidianDailyTodoWorkspace": {
+        "capture": "Todo capture",
+        "currentTask": "Current task",
+        "other": "Other",
+        "runWithAi": "Run with AI",
+        "unsaved": "Unsaved changes",
+        "selectTask": "Select a task",
+        "selectTaskDescription": "Choose a task from the Todo list to view and update its work record.",
+        "cancelled": "Cancelled",
+        "resizeTodoList": "Resize Todo list",
+        "resizeTodoListHint": "Drag to resize · Double-click to reset"
+      },
+      "ObsidianWorkRecordLinkPreviews": {
+        "meego": "Meego",
+        "feishuDocument": "Feishu document"
+      },
+      "ObsidianDailyTodoAnalytics": {
+        "recentTrend": "Last 30 days",
+        "recentTrendDescription": "Daily task volume and completed work",
+        "monthlyTrend": "{{value0}} monthly trend",
+        "monthlyTrendDescription": "Completion rate by month",
+        "yearHeatmap": "{{value0}} completion heatmap",
+        "yearHeatmapDescription": "Darker cells represent more completed tasks",
+        "less": "Less",
+        "more": "More",
+        "created": "All tasks",
+        "longTermProgress": "Long-term progress",
+        "sourceDescription": "Aggregated from Todo states in your daily Markdown notes",
+        "monthCompletion": "Month {{value0}} completion",
+        "completedOfTotal": "{{value0}} of {{value1}} completed",
+        "yearCompleted": "Completed this year",
+        "totalTasks": "{{value0}} tasks in total",
+        "yearCompletion": "Year completion",
+        "inProgressTasks": "{{value0}} tasks in progress",
+        "activeDays": "Active days",
+        "activeDaysDetail": "Days with Todo activity in {{value0}}",
+        "empty": "No historical Todo data for this year",
+        "emptyDescription": "Todo history appears here as dated Markdown notes are added."
       }
     },
     "i18n": {
@@ -13140,6 +13231,33 @@
           "91b5c8d7e6": "GitLab"
         }
       }
+    },
+    "focus": {
+      "recorded": "Focus session recorded in the work record",
+      "focusTime": "Focus time",
+      "today": "Today",
+      "thisMonth": "This month",
+      "thisYear": "This year",
+      "sessions": "{{value0}} sessions",
+      "selectTask": "Choose a Todo to focus",
+      "description": "Work on one task at a time. Pauses are excluded from the recorded focus time.",
+      "duration": "Focus duration",
+      "minutesShort": "min",
+      "goal": "Goal for this session",
+      "goalPlaceholder": "What concrete result do you want?",
+      "start": "Start focus",
+      "elapsed": "This focus session is complete",
+      "paused": "Paused · paused time is not counted",
+      "inProgress": "Focusing",
+      "pause": "Pause",
+      "resume": "Resume",
+      "finish": "Finish and record",
+      "notes": "Session notes",
+      "notesPlaceholder": "Capture progress or decisions…",
+      "abandonConfirm": "Discard this focus session?",
+      "abandon": "Discard",
+      "keep": "Keep",
+      "title": "Task focus"
     }
   },
   "components": {

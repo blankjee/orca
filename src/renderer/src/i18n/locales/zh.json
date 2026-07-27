@@ -6557,6 +6557,21 @@
           "obsidianDirectoryPlaceholder": "选择 Obsidian 仓库根目录",
           "chooseDirectory": "选择"
         },
+        "ObsidianAiCaptureSettingsSection": {
+          "title": "AI 收集",
+          "configured": "已配置",
+          "notConfigured": "未配置",
+          "description": "使用兼容 OpenAI Responses API 的端点，从收集的文本中提取候选 Todo。",
+          "enableLabel": "启用 AI 收集",
+          "enableDescription": "使用已保存的服务配置提取 Obsidian Todo。",
+          "endpointLabel": "端点",
+          "endpointPlaceholder": "https://ark.cn-beijing.volces.com/api/v3",
+          "modelLabel": "模型",
+          "modelPlaceholder": "模型或推理接入点 ID",
+          "confidenceLabel": "置信度阈值",
+          "apiKeyLabel": "API 密钥",
+          "apiKeyDescription": "在系统支持时，使用操作系统凭据服务加密保护。"
+        },
         "TerminalAppearanceSection": {
           "a14a427ae4": "窗格分隔线的厚度。",
           "f27a99978d": "分隔板厚度",
@@ -8166,6 +8181,7 @@
         "tasks": {
           "search": {
             "58cda6f9c0": "隐藏",
+            "aiCapture": "obsidian ai 收集 todo 提取 端点 模型 api 密钥 置信度",
             "44083ae418": "展示",
             "604d8e4089": "阿特拉斯语",
             "5430396e11": "Jira",
@@ -13072,7 +13088,8 @@
         "createTodayInObsidian": "在 Obsidian 中创建今日日报",
         "noFilteredTasks": "没有符合当前筛选的任务。",
         "clearFilter": "显示全部任务",
-        "weekNavigation": "本周日报"
+        "weekNavigation": "本周日报",
+        "candidateAdded": "Todo 已添加"
       },
       "ObsidianDailyTodoList": {
         "noPriority": "无优先级",
@@ -13084,7 +13101,13 @@
         "runWithAi": "用 AI 执行此 Todo",
         "editTask": "编辑任务",
         "doubleClickToEdit": "双击编辑：{{value0}}",
-        "workRecord": "工作记录"
+        "workRecord": "工作记录",
+        "changePriority": "修改 {{value0}} 的优先级",
+        "deleteTask": "删除任务",
+        "deleteTaskTitle": "删除这个任务？",
+        "deleteTaskDescription": "“{{value0}}”将从日报中删除，其下的子任务也会一并删除。",
+        "cancel": "取消",
+        "delete": "删除"
       },
       "ObsidianDailyNotePicker": {
         "label": "选择日报",
@@ -13125,6 +13148,74 @@
         "placeholder": "用 Markdown 记录进展、决策、链接和待跟进事项…",
         "cancel": "取消",
         "save": "保存"
+      },
+      "ObsidianDailyTodoCandidatePanel": {
+        "title": "Todo 收集",
+        "listening": "监听中",
+        "listen": "监听",
+        "listeningPlaceholder": "正在监听 macOS 可访问文本变化…",
+        "placeholder": "粘贴文本以提取候选 Todo…",
+        "listenHint": "检测到聊天或输入内容中的行动项后，会生成候选任务供确认。",
+        "safeHint": "确认加入前不会修改日报。",
+        "analyze": "提取 Todo",
+        "source": "原始文本",
+        "addToToday": "加入今天",
+        "dismiss": "忽略",
+        "group": "分组",
+        "autoCaptured": "检测到潜在 Todo，正在分析…",
+        "noCandidatesFound": "未找到候选 Todo，请尝试更明确的提醒或任务描述。",
+        "monitorTitle": "macOS Todo 监听",
+        "monitorDescription": "Orca 会在你使用飞书等 Mac 应用时监听可访问文本变化，并通过 AI 将可能的行动项整理成候选 Todo，等待你确认。",
+        "macOnly": "自动 Todo 监听目前仅支持 macOS。",
+        "monitorActive": "正在监听",
+        "monitorInactive": "监听未开启",
+        "stopMonitoring": "停止监听",
+        "startMonitoring": "开始监听",
+        "candidates": "候选 Todo",
+        "candidateCount": "{{value0}} 项待确认",
+        "noPendingCandidates": "暂无候选 Todo",
+        "noPendingCandidatesDescription": "监听检测到可能的行动项后，会显示在这里等待确认。",
+        "manualCapture": "手动分析文本",
+        "sheetDescription": "监听 Mac 应用中的潜在行动项，确认候选内容后再加入 Todo。"
+      },
+      "ObsidianDailyTodoWorkspace": {
+        "capture": "Todo 收集",
+        "currentTask": "当前任务",
+        "other": "其他",
+        "runWithAi": "用 AI 执行",
+        "unsaved": "有未保存的修改",
+        "selectTask": "选择一个任务",
+        "selectTaskDescription": "从左侧 Todo 列表选择任务，查看并更新对应的工作记录。",
+        "cancelled": "已取消",
+        "resizeTodoList": "调整 Todo 列表宽度",
+        "resizeTodoListHint": "拖动调整宽度 · 双击恢复默认"
+      },
+      "ObsidianWorkRecordLinkPreviews": {
+        "meego": "Meego",
+        "feishuDocument": "飞书文档"
+      },
+      "ObsidianDailyTodoAnalytics": {
+        "recentTrend": "近 30 天趋势",
+        "recentTrendDescription": "每日任务总量与已完成任务",
+        "monthlyTrend": "{{value0}} 年月度趋势",
+        "monthlyTrendDescription": "各月任务完成率",
+        "yearHeatmap": "{{value0}} 年完成热力图",
+        "yearHeatmapDescription": "颜色越深，表示当天完成的任务越多",
+        "less": "少",
+        "more": "多",
+        "created": "全部任务",
+        "longTermProgress": "长期进度",
+        "sourceDescription": "根据 Obsidian 日报 Markdown 中的 Todo 状态汇总",
+        "monthCompletion": "{{value0}} 月完成率",
+        "completedOfTotal": "已完成 {{value0}} / {{value1}}",
+        "yearCompleted": "全年已完成",
+        "totalTasks": "全年共 {{value0}} 项任务",
+        "yearCompletion": "全年完成率",
+        "inProgressTasks": "{{value0}} 项任务正在推进",
+        "activeDays": "活跃天数",
+        "activeDaysDetail": "{{value0}} 年有 Todo 记录的天数",
+        "empty": "今年暂无历史 Todo 数据",
+        "emptyDescription": "添加带日期的 Markdown 日报后，长期趋势会显示在这里。"
       }
     },
     "i18n": {
@@ -13140,6 +13231,33 @@
           "91b5c8d7e6": "GitLab"
         }
       }
+    },
+    "focus": {
+      "recorded": "聚焦记录已同步到工作记录",
+      "focusTime": "聚焦时长",
+      "today": "今日",
+      "thisMonth": "本月",
+      "thisYear": "今年",
+      "sessions": "{{value0}} 轮",
+      "selectTask": "选择一个 Todo 开始聚焦",
+      "description": "一次只处理一个任务；暂停期间不会计入聚焦时长。",
+      "duration": "聚焦时长",
+      "minutesShort": "分钟",
+      "goal": "本轮目标",
+      "goalPlaceholder": "这轮希望得到什么明确结果？",
+      "start": "开始聚焦",
+      "elapsed": "本轮聚焦时间已到",
+      "paused": "已暂停 · 暂停时间不计入",
+      "inProgress": "正在聚焦",
+      "pause": "暂停",
+      "resume": "继续",
+      "finish": "完成并记录",
+      "notes": "本轮记录",
+      "notesPlaceholder": "记录进展、结论或下一步…",
+      "abandonConfirm": "确定放弃本轮聚焦？",
+      "abandon": "放弃本轮",
+      "keep": "继续保留",
+      "title": "任务聚焦"
     }
   },
   "components": {

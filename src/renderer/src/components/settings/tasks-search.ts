@@ -25,5 +25,21 @@ export const getTasksPaneSearchEntries = createLocalizedCatalog(() => [
       ...translateSearchKeyword('auto.components.settings.tasks.search.44083ae418', 'display'),
       ...translateSearchKeyword('auto.components.settings.tasks.search.58cda6f9c0', 'hide')
     ]
+  },
+  {
+    title: translate(
+      'auto.components.settings.ObsidianAiCaptureSettingsSection.title',
+      'AI Capture'
+    ),
+    description: translate(
+      'auto.components.settings.ObsidianAiCaptureSettingsSection.description',
+      'Extract Todo candidates from captured text using an OpenAI Responses-compatible endpoint.'
+    ),
+    keywords: [
+      ...translateSearchKeyword(
+        'auto.components.settings.tasks.search.aiCapture',
+        'obsidian ai capture todo extraction endpoint model api key confidence'
+      )
+    ]
   }
 ])

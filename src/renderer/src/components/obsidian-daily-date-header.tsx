@@ -41,9 +41,9 @@ export function ObsidianDailyDateHeader({
   )
 
   return (
-    <header className="shrink-0 border-b border-border/60 bg-[color-mix(in_srgb,var(--obsidian-daily-date-accent)_3%,var(--background))] px-4 py-4">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex min-w-0 items-start gap-1">
+    <header className="shrink-0 border-b border-border bg-muted/20 p-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-start gap-0.5">
           <Button
             type="button"
             variant="ghost"
@@ -54,17 +54,19 @@ export function ObsidianDailyDateHeader({
               'auto.components.ObsidianDailyTodoPanel.previousNote',
               'Previous daily note'
             )}
-            className="mt-0.5"
           >
             <ChevronLeft />
           </Button>
-          <div className="min-w-0 border-l-2 border-obsidian-daily-date-accent/55 px-3">
-            <h2 className="truncate text-2xl font-semibold leading-none">
+          <div className="min-w-0 px-1.5">
+            <h2
+              title={snapshot?.relativePath || directory}
+              className="truncate text-sm font-semibold"
+            >
               {date
                 ? formatObsidianDailyDateTitle(date, i18n.language)
                 : translate('auto.components.ObsidianDailyTodoPanel.title', 'Daily Todo')}
             </h2>
-            <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
               {date ? <span>{formatObsidianDailyDateWeekday(date, i18n.language)}</span> : null}
               {date === snapshot?.today ? (
                 <>
@@ -73,14 +75,6 @@ export function ObsidianDailyDateHeader({
                 </>
               ) : null}
             </div>
-            <p
-              title={snapshot?.filePath || directory}
-              className="mt-1 max-w-2xl truncate font-mono text-[11px] text-muted-foreground"
-            >
-              {snapshot?.relativePath ||
-                directory ||
-                translate('auto.components.ObsidianDailyTodoPanel.notConfigured', 'Not configured')}
-            </p>
           </div>
           <Button
             type="button"
@@ -92,24 +86,36 @@ export function ObsidianDailyDateHeader({
               'auto.components.ObsidianDailyTodoPanel.nextNote',
               'Next daily note'
             )}
-            className="mt-0.5"
           >
             <ChevronRight />
           </Button>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-0.5">
           <ObsidianDailyNotePicker
             snapshot={snapshot}
             disabled={loading || !snapshot || snapshot.dailyNotes.length === 0}
             onSelect={onSelectNote}
           />
           <RefreshButton loading={loading} disabled={!directory} onRefresh={onRefresh} />
-          <Button type="button" variant="outline" size="sm" onClick={onOpen}>
-            <ExternalLink />
-            <span className="hidden sm:inline">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={onOpen}
+                aria-label={translate(
+                  'auto.components.ObsidianDailyTodoPanel.openObsidian',
+                  'Open Obsidian'
+                )}
+              >
+                <ExternalLink />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
               {translate('auto.components.ObsidianDailyTodoPanel.openObsidian', 'Open Obsidian')}
-            </span>
-          </Button>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
       {date && snapshot ? (
@@ -131,7 +137,7 @@ function WeekStrip({
   const notesByDate = new Map(snapshot.dailyNotes.map((note) => [note.date, note]))
   return (
     <div
-      className="mt-4 grid max-w-2xl grid-cols-7 gap-1"
+      className="mt-2 grid grid-cols-7 gap-0.5"
       aria-label={translate(
         'auto.components.ObsidianDailyTodoPanel.weekNavigation',
         'Week navigation'
@@ -149,16 +155,17 @@ function WeekStrip({
             aria-current={selected ? 'date' : undefined}
             onClick={() => note && onSelectNote(note.filePath)}
             className={cn(
-              'h-12 min-w-0 flex-col gap-0.5 border border-transparent px-1 text-muted-foreground hover:bg-[color-mix(in_srgb,var(--obsidian-daily-date-accent)_8%,var(--background))]',
-              selected &&
-                'border-obsidian-daily-date-accent/30 bg-[color-mix(in_srgb,var(--obsidian-daily-date-accent)_16%,var(--background))] text-foreground shadow-xs',
+              'h-8 min-w-0 flex-col gap-0 border border-transparent px-0.5 text-muted-foreground hover:bg-accent',
+              selected && 'border-border bg-accent text-foreground',
               !note && !selected && 'opacity-35'
             )}
           >
-            <span className="text-[10px]">
+            <span className="text-[9px] leading-none">
               {formatObsidianDailyDateWeekday(date, i18n.language)}
             </span>
-            <span className="text-sm font-semibold tabular-nums">{Number(date.slice(-2))}</span>
+            <span className="text-xs font-semibold leading-none tabular-nums">
+              {Number(date.slice(-2))}
+            </span>
           </Button>
         )
       })}

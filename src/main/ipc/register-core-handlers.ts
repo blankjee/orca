@@ -169,7 +169,7 @@ export function registerCoreHandlers(
   })
   registerBrowserHandlers()
   registerShellHandlers()
-  registerObsidianDailyTodoHandlers()
+  registerObsidianDailyTodoHandlers(store)
   registerPetHandlers()
   registerSessionHandlers(store)
   registerUIHandlers(store)

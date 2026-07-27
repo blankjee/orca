@@ -1,35 +1,42 @@
 import React from 'react'
-import { FolderOpen, LoaderCircle, NotebookPen, Plus, RefreshCw } from 'lucide-react'
+import { LoaderCircle, Radio, Sparkles } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select'
-import { i18n, translate } from '@/i18n/i18n'
+import { translate } from '@/i18n/i18n'
 import type {
   ObsidianDailyTodoItem,
   ObsidianDailyTodoSnapshot,
   ObsidianDailyTodoStatus
 } from '../../../shared/obsidian-daily-todo'
 import type { ObsidianDailyTodoCandidate } from '../../../shared/obsidian-daily-todo-candidate'
+import type { ObsidianDailyTodoAnalytics } from '../../../shared/obsidian-daily-todo-analytics'
+import type { ObsidianDailyTodoPriority } from '../../../shared/obsidian-daily-todo-mutation'
+import type { ObsidianDailyTodoFocusSession } from '../../../shared/obsidian-daily-todo-focus'
+import {
+  ObsidianDailyTodoAddForm,
+  type ObsidianDailyTodoDraftPriority
+} from './obsidian-daily-todo-add-form'
+import { ObsidianDailyTodoCompactFilters } from './obsidian-daily-todo-compact-filters'
 import { ObsidianDailyDateHeader } from './obsidian-daily-date-header'
-import { formatObsidianDailyDateShort } from './obsidian-daily-date-navigation'
-import { ObsidianDailyTodoCandidatePanel } from './obsidian-daily-todo-candidate-panel'
 import { ObsidianDailyTodoList } from './obsidian-daily-todo-list'
-import { ObsidianDailyTodoOverviewPanel } from './obsidian-daily-todo-overview'
+import { ObsidianDailyTodoResizeHandle } from './obsidian-daily-todo-resize-handle'
+import {
+  ObsidianDailyTodoWorkspace,
+  type ObsidianDailyWorkspaceMode
+} from './obsidian-daily-todo-workspace'
 import type {
   ObsidianDailyTodoFilter,
   ObsidianDailyTodoGroup,
   ObsidianDailyTodoOverview
 } from './obsidian-daily-todo-presentation'
-
-type TodoPriority = 'P1' | 'P2' | 'P3'
+import { useObsidianDailyTodoRailResize } from './use-obsidian-daily-todo-rail-resize'
+import {
+  ConfigureObsidianVaultState,
+  EmptyObsidianDailyTodoState,
+  FilteredObsidianDailyTodoState,
+  MissingObsidianDailyNoteState,
+  ObsidianDailyTodoErrorState
+} from './obsidian-daily-todo-panel-states'
 
 type ObsidianDailyTodoPanelContentProps = {
   directory: string
@@ -39,36 +46,61 @@ type ObsidianDailyTodoPanelContentProps = {
   adding: boolean
   groups: readonly ObsidianDailyTodoGroup[]
   overview: ObsidianDailyTodoOverview
+  analytics: ObsidianDailyTodoAnalytics | null
+  analyticsLoading: boolean
   filter: ObsidianDailyTodoFilter
   highlightedTodoId: string | null
+  selectedTodo: ObsidianDailyTodoItem | null
+  workspaceMode: ObsidianDailyWorkspaceMode
   busyTodoIds: ReadonlySet<string>
   draft: string
-  priority: TodoPriority
+  priority: ObsidianDailyTodoDraftPriority
   candidateSourceText: string
   candidateAnalyzing: boolean
   candidateBusyIds: ReadonlySet<string>
   candidateErrorMessage: string | null
   candidates: readonly ObsidianDailyTodoCandidate[]
+  listeningForCandidates: boolean
+  focusSession: ObsidianDailyTodoFocusSession | null
+  focusNow: number
+  focusBusy: boolean
   onChooseDirectory: () => void
   onRefresh: () => void
   onOpen: () => void
   onSelectNote: (filePath: string) => void
   onFilterChange: (filter: ObsidianDailyTodoFilter) => void
-  onFocusTodo: (todo: ObsidianDailyTodoItem) => void
+  onSelectTodo: (todo: ObsidianDailyTodoItem) => void
+  onWorkspaceModeChange: (mode: ObsidianDailyWorkspaceMode) => void
   onDraftChange: (value: string) => void
-  onPriorityChange: (priority: TodoPriority) => void
+  onPriorityChange: (priority: ObsidianDailyTodoDraftPriority) => void
   onAdd: () => void
   onCandidateSourceTextChange: (value: string) => void
+  onListeningForCandidatesChange: (value: boolean) => void
   onAnalyzeCandidates: () => void
   onAcceptCandidate: (
     candidate: ObsidianDailyTodoCandidate,
-    overrides: { title: string; group: string; priority: TodoPriority | null }
+    overrides: { title: string; group: string; priority: ObsidianDailyTodoDraftPriority | null }
   ) => void
   onDismissCandidate: (candidate: ObsidianDailyTodoCandidate) => void
   onStatusChange: (todo: ObsidianDailyTodoItem, status: ObsidianDailyTodoStatus) => void
   onTextChange: (todo: ObsidianDailyTodoItem, text: string) => void
+  onTodoPriorityChange: (todo: ObsidianDailyTodoItem, priority: ObsidianDailyTodoPriority) => void
+  onDeleteTodo: (todo: ObsidianDailyTodoItem) => void
   onOpenWorkRecord: (todo: ObsidianDailyTodoItem) => void
+  onStartFocus: (todo: ObsidianDailyTodoItem) => void
+  onBeginFocus: (durationMinutes: number, goal: string) => void
+  onPauseFocus: () => void
+  onResumeFocus: () => void
+  onUpdateFocusNotes: (notes: string) => void
+  onFinishFocus: (notes: string) => void
+  onAbandonFocus: () => void
   onAiExecute: (todo: ObsidianDailyTodoItem) => void
+  recordSaving: boolean
+  onSaveWorkRecord: (
+    todo: ObsidianDailyTodoItem,
+    body: string,
+    expectedBody: string | null
+  ) => Promise<boolean>
 }
 
 export function ObsidianDailyTodoPanelContent({
@@ -79,8 +111,12 @@ export function ObsidianDailyTodoPanelContent({
   adding,
   groups,
   overview,
+  analytics,
+  analyticsLoading,
   filter,
   highlightedTodoId,
+  selectedTodo,
+  workspaceMode,
   busyTodoIds,
   draft,
   priority,
@@ -89,294 +125,214 @@ export function ObsidianDailyTodoPanelContent({
   candidateBusyIds,
   candidateErrorMessage,
   candidates,
+  listeningForCandidates,
+  focusSession,
+  focusNow,
+  focusBusy,
   onChooseDirectory,
   onRefresh,
   onOpen,
   onSelectNote,
   onFilterChange,
-  onFocusTodo,
+  onSelectTodo,
+  onWorkspaceModeChange,
   onDraftChange,
   onPriorityChange,
   onAdd,
   onCandidateSourceTextChange,
+  onListeningForCandidatesChange,
   onAnalyzeCandidates,
   onAcceptCandidate,
   onDismissCandidate,
   onStatusChange,
   onTextChange,
+  onTodoPriorityChange,
+  onDeleteTodo,
   onOpenWorkRecord,
-  onAiExecute
+  onStartFocus,
+  onBeginFocus,
+  onPauseFocus,
+  onResumeFocus,
+  onUpdateFocusNotes,
+  onFinishFocus,
+  onAbandonFocus,
+  onAiExecute,
+  recordSaving,
+  onSaveWorkRecord
 }: ObsidianDailyTodoPanelContentProps): React.JSX.Element {
+  const {
+    todoRailRef,
+    todoRailWidth,
+    isTodoRailResizing,
+    onTodoRailResizeStart,
+    updateTodoRailWidth
+  } = useObsidianDailyTodoRailResize()
+
   return (
     <section className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border/60 bg-background shadow-xs">
-      <ObsidianDailyDateHeader
-        directory={directory}
-        snapshot={snapshot}
-        loading={loading}
-        onRefresh={onRefresh}
-        onOpen={onOpen}
-        onSelectNote={onSelectNote}
-      />
-
       {!directory.trim() ? (
-        <ConfigureVaultState onChoose={onChooseDirectory} />
+        <ConfigureObsidianVaultState onChoose={onChooseDirectory} />
       ) : loading && !snapshot ? (
         <div className="flex flex-1 items-center justify-center text-muted-foreground">
           <LoaderCircle className="size-5 animate-spin" />
         </div>
       ) : errorMessage && !snapshot ? (
-        <ErrorState message={errorMessage} onChoose={onChooseDirectory} onRetry={onRefresh} />
-      ) : snapshot && !snapshot.filePath ? (
-        <MissingTodayState onOpen={onOpen} />
+        <ObsidianDailyTodoErrorState
+          message={errorMessage}
+          onChoose={onChooseDirectory}
+          onRetry={onRefresh}
+        />
       ) : (
-        <ScrollArea className="min-h-0 flex-1">
-          <div className="mx-auto w-full max-w-5xl space-y-4 p-4">
-            {overview.total > 0 ? (
-              <ObsidianDailyTodoOverviewPanel
-                overview={overview}
-                filter={filter}
-                onFilterChange={onFilterChange}
-                onFocusTodo={onFocusTodo}
-              />
-            ) : null}
-            <AddTodoForm
+        <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+          <aside
+            ref={todoRailRef}
+            // Why: the CSS variable gives first paint and Fast Refresh a
+            // deterministic width; the resize hook still owns live drag width.
+            style={
+              {
+                '--obsidian-daily-todo-rail-width': `${todoRailWidth}px`
+              } as React.CSSProperties
+            }
+            className="flex w-[var(--obsidian-daily-todo-rail-width)] min-h-0 min-w-0 flex-col max-md:!w-full"
+          >
+            <ObsidianDailyDateHeader
+              directory={directory}
               snapshot={snapshot}
-              draft={draft}
-              priority={priority}
-              adding={adding}
-              onDraftChange={onDraftChange}
-              onPriorityChange={onPriorityChange}
-              onAdd={onAdd}
+              loading={loading}
+              onRefresh={onRefresh}
+              onOpen={onOpen}
+              onSelectNote={onSelectNote}
             />
-
-            <ObsidianDailyTodoCandidatePanel
-              candidates={candidates}
-              sourceText={candidateSourceText}
-              analyzing={candidateAnalyzing}
-              busyCandidateIds={candidateBusyIds}
-              disabled={!snapshot?.filePath}
-              errorMessage={candidateErrorMessage}
-              onSourceTextChange={onCandidateSourceTextChange}
-              onAnalyze={onAnalyzeCandidates}
-              onAccept={onAcceptCandidate}
-              onDismiss={onDismissCandidate}
-            />
-
-            {errorMessage ? (
-              <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
-                {errorMessage}
-              </p>
-            ) : null}
-
-            {groups.length > 0 ? (
-              <ObsidianDailyTodoList
-                groups={groups}
-                filter={filter}
-                highlightedTodoId={highlightedTodoId}
-                busyTodoIds={busyTodoIds}
-                workRecordTitles={new Set(snapshot?.workRecords.map((record) => record.title))}
-                onStatusChange={onStatusChange}
-                onTextChange={onTextChange}
-                onOpenWorkRecord={onOpenWorkRecord}
-                onAiExecute={onAiExecute}
-              />
-            ) : overview.total > 0 ? (
-              <FilteredTodoState onClear={() => onFilterChange('all')} />
+            {!snapshot?.filePath ? (
+              <MissingObsidianDailyNoteState onOpen={onOpen} />
             ) : (
-              <EmptyTodoState />
+              <>
+                <div className="shrink-0 space-y-2 border-b border-border p-3">
+                  <ObsidianDailyTodoCompactFilters
+                    overview={overview}
+                    filter={filter}
+                    onFilterChange={onFilterChange}
+                  />
+                  <ObsidianDailyTodoAddForm
+                    snapshot={snapshot}
+                    draft={draft}
+                    priority={priority}
+                    adding={adding}
+                    onDraftChange={onDraftChange}
+                    onPriorityChange={onPriorityChange}
+                    onAdd={onAdd}
+                  />
+                  <Button
+                    type="button"
+                    variant={workspaceMode === 'capture' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() =>
+                      onWorkspaceModeChange(workspaceMode === 'capture' ? 'overview' : 'capture')
+                    }
+                  >
+                    {listeningForCandidates ? <Radio className="animate-pulse" /> : <Sparkles />}
+                    {translate(
+                      'auto.components.ObsidianDailyTodoWorkspace.capture',
+                      'Todo capture'
+                    )}
+                    {candidates.length > 0 ? (
+                      <span className="ml-auto text-xs tabular-nums text-muted-foreground">
+                        {candidates.length}
+                      </span>
+                    ) : listeningForCandidates ? (
+                      <span className="ml-auto text-[11px] text-muted-foreground">
+                        {translate(
+                          'auto.components.ObsidianDailyTodoCandidatePanel.monitorActive',
+                          'Monitoring'
+                        )}
+                      </span>
+                    ) : null}
+                  </Button>
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-y-auto p-2 scrollbar-sleek">
+                  <div>
+                    {errorMessage ? (
+                      <p className="mb-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                        {errorMessage}
+                      </p>
+                    ) : null}
+                    {groups.length > 0 ? (
+                      <ObsidianDailyTodoList
+                        groups={groups}
+                        filter={filter}
+                        highlightedTodoId={highlightedTodoId}
+                        selectedTodoId={selectedTodo?.id ?? null}
+                        collapsed={workspaceMode === 'capture'}
+                        busyTodoIds={busyTodoIds}
+                        workRecordTitles={
+                          new Set(snapshot?.workRecords.map((record) => record.title))
+                        }
+                        onSelectTodo={onSelectTodo}
+                        onStatusChange={onStatusChange}
+                        onTextChange={onTextChange}
+                        onPriorityChange={onTodoPriorityChange}
+                        onDelete={onDeleteTodo}
+                        onOpenWorkRecord={onOpenWorkRecord}
+                        onStartFocus={onStartFocus}
+                        onAiExecute={onAiExecute}
+                      />
+                    ) : overview.total > 0 ? (
+                      <FilteredObsidianDailyTodoState onClear={() => onFilterChange('all')} />
+                    ) : (
+                      <EmptyObsidianDailyTodoState />
+                    )}
+                  </div>
+                </div>
+              </>
             )}
-          </div>
-        </ScrollArea>
+          </aside>
+
+          <ObsidianDailyTodoResizeHandle
+            width={todoRailWidth}
+            resizing={isTodoRailResizing}
+            onMouseDown={onTodoRailResizeStart}
+            onWidthChange={updateTodoRailWidth}
+          />
+
+          <ObsidianDailyTodoWorkspace
+            mode={workspaceMode}
+            selectedTodo={selectedTodo}
+            snapshot={snapshot}
+            overview={overview}
+            analytics={analytics}
+            analyticsLoading={analyticsLoading}
+            filter={filter}
+            saving={recordSaving}
+            candidateSourceText={candidateSourceText}
+            candidateAnalyzing={candidateAnalyzing}
+            candidateBusyIds={candidateBusyIds}
+            candidateErrorMessage={candidateErrorMessage}
+            candidates={candidates}
+            listeningForCandidates={listeningForCandidates}
+            focusSession={focusSession}
+            focusNow={focusNow}
+            focusBusy={focusBusy}
+            onModeChange={onWorkspaceModeChange}
+            onFilterChange={onFilterChange}
+            onSelectTodo={onSelectTodo}
+            onSaveWorkRecord={onSaveWorkRecord}
+            onAiExecute={onAiExecute}
+            onCandidateSourceTextChange={onCandidateSourceTextChange}
+            onListeningForCandidatesChange={onListeningForCandidatesChange}
+            onAnalyzeCandidates={onAnalyzeCandidates}
+            onAcceptCandidate={onAcceptCandidate}
+            onDismissCandidate={onDismissCandidate}
+            onStartFocus={onBeginFocus}
+            onPauseFocus={onPauseFocus}
+            onResumeFocus={onResumeFocus}
+            onUpdateFocusNotes={onUpdateFocusNotes}
+            onFinishFocus={onFinishFocus}
+            onAbandonFocus={onAbandonFocus}
+          />
+        </div>
       )}
     </section>
-  )
-}
-
-function AddTodoForm({
-  snapshot,
-  draft,
-  priority,
-  adding,
-  onDraftChange,
-  onPriorityChange,
-  onAdd
-}: {
-  snapshot: ObsidianDailyTodoSnapshot | null
-  draft: string
-  priority: TodoPriority
-  adding: boolean
-  onDraftChange: (value: string) => void
-  onPriorityChange: (priority: TodoPriority) => void
-  onAdd: () => void
-}): React.JSX.Element {
-  const placeholder = snapshot?.date
-    ? translate('auto.components.ObsidianDailyTodoPanel.addPlaceholderDate', 'Add to {{value0}}', {
-        value0: formatObsidianDailyDateShort(snapshot.date, i18n.language)
-      })
-    : translate(
-        'auto.components.ObsidianDailyTodoPanel.addPlaceholder',
-        'Add a task to this daily note'
-      )
-  return (
-    <form
-      className="flex items-center gap-2 rounded-lg border border-obsidian-daily-compose-accent/25 border-l-[3px] border-l-obsidian-daily-compose-accent bg-[color-mix(in_srgb,var(--obsidian-daily-compose-accent)_4%,var(--card))] p-2.5"
-      onSubmit={(event) => {
-        event.preventDefault()
-        onAdd()
-      }}
-    >
-      <Plus className="ml-1 size-4 shrink-0 text-obsidian-daily-compose-accent" />
-      <Input
-        value={draft}
-        onChange={(event) => onDraftChange(event.target.value)}
-        placeholder={placeholder}
-        aria-label={placeholder}
-        className="min-w-0 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0"
-      />
-      <PrioritySelect value={priority} onChange={onPriorityChange} />
-      <Button type="submit" size="sm" disabled={!snapshot?.filePath || !draft.trim() || adding}>
-        {adding ? <LoaderCircle className="animate-spin" /> : <Plus />}
-        {translate('auto.components.ObsidianDailyTodoPanel.add', 'Add')}
-      </Button>
-    </form>
-  )
-}
-
-function PrioritySelect({
-  value,
-  onChange
-}: {
-  value: TodoPriority
-  onChange: (priority: TodoPriority) => void
-}): React.JSX.Element {
-  return (
-    <Select value={value} onValueChange={(next) => onChange(next as TodoPriority)}>
-      <SelectTrigger
-        size="sm"
-        aria-label={translate('auto.components.ObsidianDailyTodoPanel.priority', 'Priority')}
-      >
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {(['P1', 'P2', 'P3'] as const).map((priority) => (
-          <SelectItem key={priority} value={priority}>
-            {priority}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  )
-}
-
-function ConfigureVaultState({ onChoose }: { onChoose: () => void }): React.JSX.Element {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-      <FolderOpen className="mb-4 size-9 text-muted-foreground" />
-      <h3 className="text-sm font-semibold">
-        {translate(
-          'auto.components.ObsidianDailyTodoPanel.chooseTitle',
-          'Choose your Obsidian vault root'
-        )}
-      </h3>
-      <p className="mt-2 max-w-md text-sm text-muted-foreground">
-        {translate(
-          'auto.components.ObsidianDailyTodoPanel.chooseDescription',
-          'Orca automatically finds today and every YYYY-MM-DD.md daily note anywhere inside the vault.'
-        )}
-      </p>
-      <Button type="button" className="mt-5" onClick={onChoose}>
-        <FolderOpen />
-        {translate('auto.components.ObsidianDailyTodoPanel.chooseFolder', 'Choose folder')}
-      </Button>
-    </div>
-  )
-}
-
-function ErrorState({
-  message,
-  onChoose,
-  onRetry
-}: {
-  message: string
-  onChoose: () => void
-  onRetry: () => void
-}): React.JSX.Element {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-      <NotebookPen className="mb-4 size-9 text-muted-foreground" />
-      <h3 className="text-sm font-semibold">{message}</h3>
-      <div className="mt-5 flex gap-2">
-        <Button type="button" variant="outline" onClick={onRetry}>
-          <RefreshCw />
-          {translate('auto.components.ObsidianDailyTodoPanel.retry', 'Retry')}
-        </Button>
-        <Button type="button" onClick={onChoose}>
-          <FolderOpen />
-          {translate('auto.components.ObsidianDailyTodoPanel.chooseFolder', 'Choose folder')}
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-function MissingTodayState({ onOpen }: { onOpen: () => void }): React.JSX.Element {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-      <NotebookPen className="mb-4 size-9 text-muted-foreground" />
-      <h3 className="text-sm font-semibold">
-        {translate(
-          'auto.components.ObsidianDailyTodoPanel.todayNotFound',
-          'Today’s daily note was not found in this vault.'
-        )}
-      </h3>
-      <p className="mt-2 max-w-md text-sm text-muted-foreground">
-        {translate(
-          'auto.components.ObsidianDailyTodoPanel.historyAvailable',
-          'Choose any discovered daily note from the date menu above.'
-        )}
-      </p>
-      <Button type="button" className="mt-5" onClick={onOpen}>
-        {translate(
-          'auto.components.ObsidianDailyTodoPanel.createTodayInObsidian',
-          'Create today’s note in Obsidian'
-        )}
-      </Button>
-    </div>
-  )
-}
-
-function EmptyTodoState(): React.JSX.Element {
-  return (
-    <div className="flex flex-col items-center py-10 text-center">
-      <NotebookPen className="mb-3 size-7 text-muted-foreground" />
-      <p className="text-sm font-medium">
-        {translate(
-          'auto.components.ObsidianDailyTodoPanel.emptyTitle',
-          'No Markdown todos in this daily note'
-        )}
-      </p>
-      <p className="mt-1 text-xs text-muted-foreground">
-        {translate(
-          'auto.components.ObsidianDailyTodoPanel.emptyDescription',
-          'Add one above or use a checklist like “- [ ] Task” in Obsidian.'
-        )}
-      </p>
-    </div>
-  )
-}
-
-function FilteredTodoState({ onClear }: { onClear: () => void }): React.JSX.Element {
-  return (
-    <div className="flex flex-col items-center py-10 text-center">
-      <p className="text-sm text-muted-foreground">
-        {translate(
-          'auto.components.ObsidianDailyTodoPanel.noFilteredTasks',
-          'No tasks match this filter.'
-        )}
-      </p>
-      <Button type="button" variant="link" size="sm" onClick={onClear}>
-        {translate('auto.components.ObsidianDailyTodoPanel.clearFilter', 'Show all tasks')}
-      </Button>
-    </div>
   )
 }

@@ -76,6 +76,22 @@ export type ObsidianDailyTodoCandidateMutationResult =
   | { ok: true; candidate: ObsidianDailyTodoCandidate }
   | { ok: false; code: ObsidianDailyTodoCandidateErrorCode; message: string }
 
+export type ObsidianDailyTodoCandidateChangedEvent = {
+  source?: 'manual' | 'monitor-captured' | 'monitor-analyzed' | 'monitor'
+  app?: string
+  reason?: string
+  sourceText?: string
+}
+
+export type ObsidianDailyTodoCandidateMonitorStartInput = {
+  directory: string
+  filePath: string
+}
+
+export type ObsidianDailyTodoCandidateMonitorStatusResult =
+  | { ok: true; running: boolean }
+  | { ok: false; code: 'invalid-input'; message: string }
+
 export function isObsidianDailyTodoCandidatePriority(
   value: unknown
 ): value is ObsidianDailyTodoCandidatePriority {

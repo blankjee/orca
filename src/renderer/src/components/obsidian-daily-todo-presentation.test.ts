@@ -35,12 +35,13 @@ describe('Obsidian daily todo presentation', () => {
       todo('other', null, null),
       todo('follow-up', '跟进任务', 'P2'),
       todo('today-p3', '今日任务', 'P3'),
+      todo('daily-check', '每日check', null),
       todo('today-p1', '今日任务', 'P1', 'completed')
     ])
 
-    expect(groups.map((group) => group.name)).toEqual(['今日任务', '跟进任务', '其他'])
-    expect(groups[0].completed).toBe(1)
-    expect(groups[0].priorities.map((group) => group.priority)).toEqual(['P1', 'P3'])
+    expect(groups.map((group) => group.name)).toEqual(['每日check', '今日任务', '跟进任务', '其他'])
+    expect(groups[1].completed).toBe(1)
+    expect(groups[1].priorities.map((group) => group.priority)).toEqual(['P1', 'P3'])
   })
 
   it('cycles through actionable statuses and reopens terminal statuses', () => {

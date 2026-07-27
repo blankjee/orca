@@ -1,5 +1,6 @@
 /* eslint-disable max-lines */
 import type { ExecutionHostId } from './execution-host'
+import type { ObsidianAiCaptureSettings } from './obsidian-ai-capture-settings'
 import type { RemovedSshTargetTombstone, SshRemotePtyLease, SshTarget } from './ssh-types'
 import type { Automation, AutomationExecutionTargetType, AutomationRun } from './automations-types'
 import type { WorkspaceSource } from './workspace-source'
@@ -2793,6 +2794,9 @@ export type GlobalSettings = {
    *  deliberately separate from repo/runtime paths because the source always
    *  belongs to the desktop running Orca. */
   obsidianDailyNotesDirectory: string
+  /** AI-backed Todo extraction for local Obsidian daily notes. The API key is
+   *  protected with Electron safeStorage at the persistence boundary. */
+  obsidianAiCapture?: ObsidianAiCaptureSettings
   /** Why: persists the user's repo selection in the cross-repo tasks view.
    *  `null` means sticky-all — every eligible repo is selected, including
    *  repos added in future sessions, so the "All repos" label stays

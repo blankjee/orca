@@ -9,19 +9,25 @@ import {
 import type {
   ObsidianDailyTodoItem,
   ObsidianDailyTodoResult,
-  ObsidianDailyTodoSnapshot,
-  ObsidianDailyTodoStatus
+  ObsidianDailyTodoSnapshot
 } from '../../../shared/obsidian-daily-todo'
 import { ObsidianDailyTodoPanelContent } from './obsidian-daily-todo-panel-content'
-import { ObsidianDailyWorkRecordSheet } from './obsidian-daily-work-record-sheet'
-import { ObsidianTodoAgentLaunchDialog } from './ObsidianTodoAgentLaunchDialog'
+import {
+  applyObsidianDailyTodoResult,
+  getObsidianDailyTodoErrorMessage
+} from './obsidian-daily-todo-result'
+import type { ObsidianDailyWorkspaceMode } from './obsidian-daily-todo-workspace'
 import { useObsidianDailyTodoCandidates } from './use-obsidian-daily-todo-candidates'
+import { useObsidianDailyTodoMutations } from './use-obsidian-daily-todo-mutations'
+import { useIsWideObsidianDailyTodoWorkspace } from './use-obsidian-daily-todo-workspace-breakpoint'
+import { useObsidianDailyTodoDashboard } from './use-obsidian-daily-todo-dashboard'
+import { useObsidianDailyTodoFocus } from './use-obsidian-daily-todo-focus'
 import {
   filterObsidianDailyTodos,
   groupObsidianDailyTodos,
-  summarizeObsidianDailyTodos,
   type ObsidianDailyTodoFilter
 } from './obsidian-daily-todo-presentation'
+import { ObsidianDailyTodoPanelOverlays } from './obsidian-daily-todo-panel-overlays'
 
 type ObsidianDailyTodoPanelProps = {
   directory: string
@@ -40,16 +46,21 @@ export function ObsidianDailyTodoPanel({
   const [error, setError] = useState<Exclude<ObsidianDailyTodoResult, { ok: true }> | null>(null)
   const [loading, setLoading] = useState(false)
   const [adding, setAdding] = useState(false)
-  const [busyTodoIds, setBusyTodoIds] = useState<Set<string>>(new Set())
   const [draft, setDraft] = useState('')
   const [priority, setPriority] = useState<TodoPriority>('P2')
   const [selectedFilePath, setSelectedFilePath] = useState<string | undefined>()
   const [filter, setFilter] = useState<ObsidianDailyTodoFilter>('all')
   const [highlightedTodoId, setHighlightedTodoId] = useState<string | null>(null)
+  const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null)
+  const [selectedTodoLineNumber, setSelectedTodoLineNumber] = useState<number | null>(null)
+  const [selectedTodoText, setSelectedTodoText] = useState<string | null>(null)
+  const [workspaceMode, setWorkspaceMode] = useState<ObsidianDailyWorkspaceMode>('overview')
   const [agentTodo, setAgentTodo] = useState<ObsidianDailyTodoItem | null>(null)
   const [recordTodo, setRecordTodo] = useState<ObsidianDailyTodoItem | null>(null)
   const [recordSaving, setRecordSaving] = useState(false)
   const [candidateAnalyzing, setCandidateAnalyzing] = useState(false)
+  const [candidateSheetOpen, setCandidateSheetOpen] = useState(false)
+  const isWideWorkspace = useIsWideObsidianDailyTodoWorkspace()
 
   const loadTodos = useCallback(
     async (showLoading = true, refresh = false): Promise<void> => {
@@ -62,7 +73,7 @@ export function ObsidianDailyTodoPanel({
         setLoading(true)
       }
       try {
-        applyResult(
+        applyObsidianDailyTodoResult(
           await window.api.obsidianDailyTodos.load({
             directory,
             filePath: selectedFilePath,
@@ -87,22 +98,48 @@ export function ObsidianDailyTodoPanel({
     return () => window.clearInterval(poll)
   }, [loadTodos])
 
-  const overview = useMemo(
-    () => summarizeObsidianDailyTodos(snapshot?.todos ?? []),
-    [snapshot?.todos]
+  const { overview, analytics, analyticsLoading, refreshAnalytics } = useObsidianDailyTodoDashboard(
+    directory,
+    snapshot
   )
   const filteredTodos = useMemo(
     () => filterObsidianDailyTodos(snapshot?.todos ?? [], filter),
     [filter, snapshot?.todos]
   )
   const groups = useMemo(() => groupObsidianDailyTodos(filteredTodos), [filteredTodos])
+  const selectedTodo = useMemo(
+    () =>
+      snapshot?.todos.find((todo) => todo.id === selectedTodoId) ??
+      snapshot?.todos.find((todo) => todo.text === selectedTodoText) ??
+      snapshot?.todos.find((todo) => todo.lineNumber === selectedTodoLineNumber) ??
+      null,
+    [selectedTodoId, selectedTodoLineNumber, selectedTodoText, snapshot?.todos]
+  )
+  const focus = useObsidianDailyTodoFocus({
+    directory,
+    snapshot,
+    selectedTodo,
+    onSnapshot: (nextSnapshot) => {
+      setSnapshot(nextSnapshot)
+      setError(null)
+    },
+    onSelectTodo: (todo) => {
+      setSelectedTodoId(todo.id)
+      setSelectedTodoLineNumber(todo.lineNumber)
+      setSelectedTodoText(todo.text)
+      setWorkspaceMode('focus')
+    },
+    onRefreshAnalytics: refreshAnalytics
+  })
 
   const {
     candidateSourceText,
     candidates,
     candidateError,
     busyCandidateIds,
+    listeningForCandidates,
     setCandidateSourceText,
+    setListeningForCandidates,
     analyzeCandidates,
     acceptCandidate,
     dismissCandidate
@@ -115,6 +152,17 @@ export function ObsidianDailyTodoPanel({
       setError(null)
     }
   })
+  const { busyTodoIds, updateStatus, updateText, updatePriority, deleteTodo } =
+    useObsidianDailyTodoMutations({
+      directory,
+      filePath: snapshot?.filePath,
+      onResult: (result) => {
+        applyObsidianDailyTodoResult(result, setSnapshot, setError)
+        if (!result.ok) {
+          toast.error(getObsidianDailyTodoErrorMessage(result))
+        }
+      }
+    })
 
   useEffect(() => {
     if (!highlightedTodoId) {
@@ -132,6 +180,33 @@ export function ObsidianDailyTodoPanel({
     }
   }, [groups, highlightedTodoId])
 
+  useEffect(() => {
+    if (!selectedTodo || selectedTodo.id === selectedTodoId) {
+      return
+    }
+    setSelectedTodoId(selectedTodo.id)
+    setSelectedTodoLineNumber(selectedTodo.lineNumber)
+    setSelectedTodoText(selectedTodo.text)
+  }, [selectedTodo, selectedTodoId])
+
+  useEffect(() => {
+    if (!snapshot || !selectedTodoId || selectedTodo) {
+      return
+    }
+    // Why: deleting or externally renaming the selected Todo must not leave
+    // the right workspace in a task mode with no task to render.
+    setSelectedTodoId(null)
+    setSelectedTodoLineNumber(null)
+    setSelectedTodoText(null)
+    setWorkspaceMode('overview')
+  }, [selectedTodo, selectedTodoId, snapshot])
+
+  useEffect(() => {
+    if (isWideWorkspace) {
+      setCandidateSheetOpen(false)
+    }
+  }, [isWideWorkspace])
+
   const chooseDirectory = async (): Promise<void> => {
     const selected = await window.api.shell.pickDirectory({ defaultPath: directory || undefined })
     if (!selected) {
@@ -140,6 +215,9 @@ export function ObsidianDailyTodoPanel({
     setSelectedFilePath(undefined)
     setFilter('all')
     setHighlightedTodoId(null)
+    setSelectedTodoId(null)
+    setSelectedTodoLineNumber(null)
+    setSelectedTodoText(null)
     await onSaveDirectory(selected)
   }
 
@@ -148,12 +226,18 @@ export function ObsidianDailyTodoPanel({
     setHighlightedTodoId(null)
     setAgentTodo(null)
     setRecordTodo(null)
+    setSelectedTodoId(null)
+    setSelectedTodoLineNumber(null)
+    setSelectedTodoText(null)
+    setWorkspaceMode('overview')
     setSelectedFilePath(filePath)
   }
 
-  const focusTodo = (todo: ObsidianDailyTodoItem): void => {
-    setFilter(todo.status === 'cancelled' ? 'all' : todo.status)
-    setHighlightedTodoId(todo.id)
+  const selectTodo = (todo: ObsidianDailyTodoItem): void => {
+    setSelectedTodoId(todo.id)
+    setSelectedTodoLineNumber(todo.lineNumber)
+    setSelectedTodoText(todo.text)
+    setWorkspaceMode('task')
   }
 
   const openDailyNote = (): void => {
@@ -168,35 +252,6 @@ export function ObsidianDailyTodoPanel({
         )
       )
     })
-  }
-
-  const updateStatus = async (
-    todo: ObsidianDailyTodoItem,
-    status: ObsidianDailyTodoStatus
-  ): Promise<void> => {
-    const filePath = snapshot?.filePath
-    if (!filePath) {
-      return
-    }
-    setBusyTodoIds((current) => new Set(current).add(todo.id))
-    try {
-      const result = await window.api.obsidianDailyTodos.setStatus({
-        directory,
-        filePath,
-        todo,
-        status
-      })
-      applyResult(result, setSnapshot, setError)
-      if (!result.ok) {
-        toast.error(getErrorMessage(result))
-      }
-    } finally {
-      setBusyTodoIds((current) => {
-        const next = new Set(current)
-        next.delete(todo.id)
-        return next
-      })
-    }
   }
 
   const addTodo = async (): Promise<void> => {
@@ -214,40 +269,14 @@ export function ObsidianDailyTodoPanel({
         group: '今日任务',
         priority
       })
-      applyResult(result, setSnapshot, setError)
+      applyObsidianDailyTodoResult(result, setSnapshot, setError)
       if (result.ok) {
         setDraft('')
       } else {
-        toast.error(getErrorMessage(result))
+        toast.error(getObsidianDailyTodoErrorMessage(result))
       }
     } finally {
       setAdding(false)
-    }
-  }
-
-  const updateText = async (todo: ObsidianDailyTodoItem, text: string): Promise<void> => {
-    const filePath = snapshot?.filePath
-    if (!filePath || text.trim() === todo.text) {
-      return
-    }
-    setBusyTodoIds((current) => new Set(current).add(todo.id))
-    try {
-      const result = await window.api.obsidianDailyTodos.updateText({
-        directory,
-        filePath,
-        todo,
-        text
-      })
-      applyResult(result, setSnapshot, setError)
-      if (!result.ok) {
-        toast.error(getErrorMessage(result))
-      }
-    } finally {
-      setBusyTodoIds((current) => {
-        const next = new Set(current)
-        next.delete(todo.id)
-        return next
-      })
     }
   }
 
@@ -255,10 +284,10 @@ export function ObsidianDailyTodoPanel({
     todo: ObsidianDailyTodoItem,
     body: string,
     expectedBody: string | null
-  ): Promise<void> => {
+  ): Promise<boolean> => {
     const filePath = snapshot?.filePath
     if (!filePath || recordSaving) {
-      return
+      return false
     }
     setRecordSaving(true)
     try {
@@ -269,15 +298,16 @@ export function ObsidianDailyTodoPanel({
         body,
         expectedBody
       })
-      applyResult(result, setSnapshot, setError)
+      applyObsidianDailyTodoResult(result, setSnapshot, setError)
       if (result.ok) {
         setRecordTodo(null)
         toast.success(
           translate('auto.components.ObsidianDailyWorkRecordSheet.saved', 'Work record saved')
         )
       } else {
-        toast.error(getErrorMessage(result))
+        toast.error(getObsidianDailyTodoErrorMessage(result))
       }
+      return result.ok
     } finally {
       setRecordSaving(false)
     }
@@ -288,13 +318,17 @@ export function ObsidianDailyTodoPanel({
       <ObsidianDailyTodoPanelContent
         directory={directory}
         snapshot={snapshot}
-        errorMessage={error ? getErrorMessage(error) : null}
+        errorMessage={error ? getObsidianDailyTodoErrorMessage(error) : null}
         loading={loading}
         adding={adding}
         groups={groups}
         overview={overview}
+        analytics={analytics}
+        analyticsLoading={analyticsLoading}
         filter={filter}
         highlightedTodoId={highlightedTodoId}
+        selectedTodo={selectedTodo}
+        workspaceMode={workspaceMode}
         busyTodoIds={busyTodoIds}
         draft={draft}
         priority={priority}
@@ -303,19 +337,38 @@ export function ObsidianDailyTodoPanel({
         candidateBusyIds={busyCandidateIds}
         candidateErrorMessage={candidateError}
         candidates={candidates}
+        listeningForCandidates={listeningForCandidates}
+        focusSession={focus.session}
+        focusNow={focus.now}
+        focusBusy={focus.busy}
         onChooseDirectory={() => void chooseDirectory()}
-        onRefresh={() => void loadTodos(true, true)}
+        onRefresh={() => void Promise.all([loadTodos(true, true), refreshAnalytics()])}
         onOpen={openDailyNote}
         onSelectNote={selectNote}
         onFilterChange={(nextFilter) => {
           setFilter(nextFilter)
           setHighlightedTodoId(null)
         }}
-        onFocusTodo={focusTodo}
+        onSelectTodo={selectTodo}
+        onStartFocus={focus.selectTodo}
+        onBeginFocus={focus.start}
+        onPauseFocus={focus.pause}
+        onResumeFocus={focus.resume}
+        onUpdateFocusNotes={(notes) => focus.update({ notes })}
+        onFinishFocus={focus.finish}
+        onAbandonFocus={focus.abandon}
+        onWorkspaceModeChange={(mode) => {
+          if (mode === 'capture' && !isWideWorkspace) {
+            setCandidateSheetOpen(true)
+            return
+          }
+          setWorkspaceMode(mode)
+        }}
         onDraftChange={setDraft}
         onPriorityChange={setPriority}
         onAdd={() => void addTodo()}
         onCandidateSourceTextChange={setCandidateSourceText}
+        onListeningForCandidatesChange={setListeningForCandidates}
         onAnalyzeCandidates={() => {
           setCandidateAnalyzing(true)
           void analyzeCandidates().finally(() => setCandidateAnalyzing(false))
@@ -324,80 +377,43 @@ export function ObsidianDailyTodoPanel({
         onDismissCandidate={(candidate) => void dismissCandidate(candidate)}
         onStatusChange={(todo, status) => void updateStatus(todo, status)}
         onTextChange={(todo, text) => void updateText(todo, text)}
-        onOpenWorkRecord={setRecordTodo}
+        onTodoPriorityChange={(todo, nextPriority) => void updatePriority(todo, nextPriority)}
+        onDeleteTodo={(todo) => void deleteTodo(todo)}
+        onOpenWorkRecord={(todo) => {
+          selectTodo(todo)
+          if (!window.matchMedia('(min-width: 1024px)').matches) {
+            setRecordTodo(todo)
+          }
+        }}
         onAiExecute={setAgentTodo}
+        recordSaving={recordSaving}
+        onSaveWorkRecord={saveWorkRecord}
       />
-      <ObsidianDailyWorkRecordSheet
-        key={recordTodo?.id ?? 'closed'}
-        todo={recordTodo}
-        record={
-          recordTodo
-            ? (snapshot?.workRecords.find((record) => record.title === recordTodo.text) ?? null)
-            : null
-        }
-        open={recordTodo !== null}
-        saving={recordSaving}
-        onOpenChange={(open) => {
-          if (!open && !recordSaving) {
-            setRecordTodo(null)
-          }
-        }}
-        onSave={(body, expectedBody) => {
-          if (recordTodo) {
-            void saveWorkRecord(recordTodo, body, expectedBody)
-          }
-        }}
-      />
-      <ObsidianTodoAgentLaunchDialog
-        todo={agentTodo}
+      <ObsidianDailyTodoPanelOverlays
         snapshot={snapshot}
-        open={agentTodo !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setAgentTodo(null)
-          }
+        recordTodo={recordTodo}
+        recordSaving={recordSaving}
+        setRecordTodo={setRecordTodo}
+        onSaveWorkRecord={saveWorkRecord}
+        candidateSheetOpen={candidateSheetOpen}
+        setCandidateSheetOpen={setCandidateSheetOpen}
+        candidates={candidates}
+        candidateSourceText={candidateSourceText}
+        candidateAnalyzing={candidateAnalyzing}
+        listeningForCandidates={listeningForCandidates}
+        candidateBusyIds={busyCandidateIds}
+        candidateError={candidateError}
+        setCandidateSourceText={setCandidateSourceText}
+        setListeningForCandidates={setListeningForCandidates}
+        onAnalyzeCandidates={() => {
+          setCandidateAnalyzing(true)
+          void analyzeCandidates().finally(() => setCandidateAnalyzing(false))
         }}
+        onAcceptCandidate={(candidate, overrides) => void acceptCandidate(candidate, overrides)}
+        onDismissCandidate={(candidate) => void dismissCandidate(candidate)}
+        agentTodo={agentTodo}
+        setAgentTodo={setAgentTodo}
       />
     </>
-  )
-}
-
-function applyResult(
-  result: ObsidianDailyTodoResult,
-  setSnapshot: React.Dispatch<React.SetStateAction<ObsidianDailyTodoSnapshot | null>>,
-  setError: React.Dispatch<
-    React.SetStateAction<Exclude<ObsidianDailyTodoResult, { ok: true }> | null>
-  >
-): void {
-  if (result.ok) {
-    setSnapshot(result.snapshot)
-    setError(null)
-  } else {
-    setError(result)
-  }
-}
-
-function getErrorMessage(error: Exclude<ObsidianDailyTodoResult, { ok: true }>): string {
-  if (error.code === 'note-not-found') {
-    return translate(
-      'auto.components.ObsidianDailyTodoPanel.noteNotFound',
-      'The selected daily note was not found in this vault.'
-    )
-  }
-  if (error.code === 'directory-not-found' || error.code === 'invalid-directory') {
-    return translate(
-      'auto.components.ObsidianDailyTodoPanel.directoryUnavailable',
-      'The Obsidian vault root is unavailable.'
-    )
-  }
-  if (error.code === 'todo-conflict') {
-    return translate(
-      'auto.components.ObsidianDailyTodoPanel.todoConflict',
-      'This todo changed in another app. Refresh and try again.'
-    )
-  }
-  return translate(
-    'auto.components.ObsidianDailyTodoPanel.accessFailed',
-    'Orca could not read or update the selected daily note.'
   )
 }

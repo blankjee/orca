@@ -5,15 +5,57 @@ import { describe, expect, it } from 'vitest'
 
 import {
   addObsidianDailyTodoToNote,
+  deleteObsidianDailyTodoFromNote,
   loadObsidianDailyTodos,
   saveObsidianDailyWorkRecordToNote,
   setObsidianDailyTodoStatus,
+  updateObsidianDailyTodoPriorityInNote,
   updateObsidianDailyTodoTextInNote
 } from './obsidian-daily-todo-service'
+import { loadObsidianDailyTodoAnalytics } from './obsidian-daily-todo-analytics-service'
 
 const TODAY = new Date(2026, 6, 16, 12)
 
 describe('Obsidian daily todo service', () => {
+  it('aggregates one preferred note per day into yearly analytics', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'orca-obsidian-analytics-'))
+    const daily = join(directory, 'Daily')
+    await mkdir(daily, { recursive: true })
+    await writeFile(
+      join(daily, '2026-07-15.md'),
+      '- [x] done\n- [/] active\n\n## 工作记录\n\n### done\n\n- [ ] not a Todo\n'
+    )
+    await writeFile(join(daily, '2026-07-16.md'), '- [ ] pending\n- [-] cancelled\n')
+    await writeFile(join(daily, '2025-07-16.md'), '- [x] previous year\n')
+
+    const result = await loadObsidianDailyTodoAnalytics(directory, 2026, true)
+
+    expect(result).toEqual({
+      ok: true,
+      analytics: {
+        year: 2026,
+        days: [
+          {
+            date: '2026-07-16',
+            total: 2,
+            pending: 1,
+            inProgress: 0,
+            completed: 0,
+            cancelled: 1
+          },
+          {
+            date: '2026-07-15',
+            total: 2,
+            pending: 0,
+            inProgress: 1,
+            completed: 1,
+            cancelled: 0
+          }
+        ]
+      }
+    })
+  })
+
   it('discovers today and all daily notes recursively from the vault root', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'orca-obsidian-vault-'))
     const nested = join(directory, 'blankjee-work', '1_📅Daily', '2026', '07')
@@ -95,6 +137,44 @@ describe('Obsidian daily todo service', () => {
     await expect(readFile(filePath, 'utf8')).resolves.toContain(
       '- [ ] new title\n\n## 工作记录\n\n### new title'
     )
+  })
+
+  it('changes an existing task priority in the daily note', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'orca-obsidian-todos-'))
+    const filePath = join(directory, '2026-07-16.md')
+    await writeFile(filePath, '### 今日任务\n#### P1\n- [/] ship\n#### P2\n- [ ] review\n')
+    const loaded = await loadObsidianDailyTodos(directory, filePath, TODAY)
+    if (!loaded.ok) {
+      throw new Error(loaded.message)
+    }
+
+    const result = await updateObsidianDailyTodoPriorityInNote(
+      { directory, filePath, todo: loaded.snapshot.todos[0], priority: 'P2' },
+      TODAY
+    )
+
+    expect(result.ok, result.ok ? '' : result.message).toBe(true)
+    await expect(readFile(filePath, 'utf8')).resolves.toContain(
+      '#### P2\n- [ ] review\n\n- [/] ship'
+    )
+  })
+
+  it('deletes an existing task from the daily note', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'orca-obsidian-todos-'))
+    const filePath = join(directory, '2026-07-16.md')
+    await writeFile(filePath, '- [ ] remove me\n- [ ] keep me\n')
+    const loaded = await loadObsidianDailyTodos(directory, filePath, TODAY)
+    if (!loaded.ok) {
+      throw new Error(loaded.message)
+    }
+
+    const result = await deleteObsidianDailyTodoFromNote(
+      { directory, filePath, todo: loaded.snapshot.todos[0] },
+      TODAY
+    )
+
+    expect(result.ok, result.ok ? '' : result.message).toBe(true)
+    await expect(readFile(filePath, 'utf8')).resolves.toBe('- [ ] keep me\n')
   })
 
   it('saves a task work record back to the daily note', async () => {

@@ -104,15 +104,37 @@ import type {
   ObsidianDailyTodoResult,
   ObsidianDailyTodoStatusUpdate
 } from '../shared/obsidian-daily-todo'
+import type {
+  ObsidianDailyTodoAnalyticsInput,
+  ObsidianDailyTodoAnalyticsResult
+} from '../shared/obsidian-daily-todo-analytics'
+import type {
+  ObsidianDailyTodoFocusFinishResult,
+  ObsidianDailyTodoFocusSession,
+  ObsidianDailyTodoFocusStartInput,
+  ObsidianDailyTodoFocusStateResult,
+  ObsidianDailyTodoFocusUpdateInput
+} from '../shared/obsidian-daily-todo-focus'
 import type { ObsidianDailyTodoTextUpdate } from '../shared/obsidian-daily-todo-text'
+import type {
+  ObsidianDailyTodoDeleteInput,
+  ObsidianDailyTodoPriorityUpdate
+} from '../shared/obsidian-daily-todo-mutation'
 import type { ObsidianDailyWorkRecordSaveInput } from '../shared/obsidian-daily-work-record'
+import type {
+  ObsidianWorkRecordLinkResolveInput,
+  ObsidianWorkRecordLinkResolveResult
+} from '../shared/obsidian-work-record-link'
 import type {
   ObsidianDailyTodoCandidateAcceptInput,
   ObsidianDailyTodoCandidateAcceptResult,
   ObsidianDailyTodoCandidateAnalyzeInput,
   ObsidianDailyTodoCandidateAnalyzeResult,
+  ObsidianDailyTodoCandidateChangedEvent,
   ObsidianDailyTodoCandidateDismissInput,
   ObsidianDailyTodoCandidateListResult,
+  ObsidianDailyTodoCandidateMonitorStartInput,
+  ObsidianDailyTodoCandidateMonitorStatusResult,
   ObsidianDailyTodoCandidateMutationResult,
   ObsidianDailyTodoCandidateUpdateInput
 } from '../shared/obsidian-daily-todo-candidate'
@@ -2229,6 +2251,8 @@ const api = {
   },
 
   obsidianDailyTodos: {
+    analytics: (args: ObsidianDailyTodoAnalyticsInput): Promise<ObsidianDailyTodoAnalyticsResult> =>
+      ipcRenderer.invoke('obsidianDailyTodos:analytics', args),
     load: (args: {
       directory: string
       filePath?: string
@@ -2240,8 +2264,44 @@ const api = {
       ipcRenderer.invoke('obsidianDailyTodos:add', args),
     updateText: (args: ObsidianDailyTodoTextUpdate): Promise<ObsidianDailyTodoResult> =>
       ipcRenderer.invoke('obsidianDailyTodos:updateText', args),
+    updatePriority: (args: ObsidianDailyTodoPriorityUpdate): Promise<ObsidianDailyTodoResult> =>
+      ipcRenderer.invoke('obsidianDailyTodos:updatePriority', args),
+    delete: (args: ObsidianDailyTodoDeleteInput): Promise<ObsidianDailyTodoResult> =>
+      ipcRenderer.invoke('obsidianDailyTodos:delete', args),
     saveWorkRecord: (args: ObsidianDailyWorkRecordSaveInput): Promise<ObsidianDailyTodoResult> =>
       ipcRenderer.invoke('obsidianDailyTodos:saveWorkRecord', args),
+    resolveWorkRecordLinks: (
+      args: ObsidianWorkRecordLinkResolveInput
+    ): Promise<ObsidianWorkRecordLinkResolveResult> =>
+      ipcRenderer.invoke('obsidianDailyTodos:resolveWorkRecordLinks', args),
+    focus: {
+      get: (): Promise<ObsidianDailyTodoFocusStateResult> =>
+        ipcRenderer.invoke('obsidianDailyTodos:focus:get'),
+      start: (args: ObsidianDailyTodoFocusStartInput): Promise<ObsidianDailyTodoFocusStateResult> =>
+        ipcRenderer.invoke('obsidianDailyTodos:focus:start', args),
+      pause: (): Promise<ObsidianDailyTodoFocusStateResult> =>
+        ipcRenderer.invoke('obsidianDailyTodos:focus:pause'),
+      resume: (): Promise<ObsidianDailyTodoFocusStateResult> =>
+        ipcRenderer.invoke('obsidianDailyTodos:focus:resume'),
+      update: (
+        args: ObsidianDailyTodoFocusUpdateInput
+      ): Promise<ObsidianDailyTodoFocusStateResult> =>
+        ipcRenderer.invoke('obsidianDailyTodos:focus:update', args),
+      finish: (): Promise<ObsidianDailyTodoFocusFinishResult> =>
+        ipcRenderer.invoke('obsidianDailyTodos:focus:finish'),
+      abandon: (): Promise<ObsidianDailyTodoFocusStateResult> =>
+        ipcRenderer.invoke('obsidianDailyTodos:focus:abandon'),
+      onChanged: (
+        callback: (session: ObsidianDailyTodoFocusSession | null) => void
+      ): (() => void) => {
+        const listener = (
+          _event: Electron.IpcRendererEvent,
+          session: ObsidianDailyTodoFocusSession | null
+        ): void => callback(session)
+        ipcRenderer.on('obsidianDailyTodos:focus:changed', listener)
+        return () => ipcRenderer.removeListener('obsidianDailyTodos:focus:changed', listener)
+      }
+    },
     candidates: {
       list: (): Promise<ObsidianDailyTodoCandidateListResult> =>
         ipcRenderer.invoke('obsidianDailyTodos:candidates:list'),
@@ -2260,7 +2320,32 @@ const api = {
       dismiss: (
         args: ObsidianDailyTodoCandidateDismissInput
       ): Promise<ObsidianDailyTodoCandidateMutationResult> =>
-        ipcRenderer.invoke('obsidianDailyTodos:candidates:dismiss', args)
+        ipcRenderer.invoke('obsidianDailyTodos:candidates:dismiss', args),
+      startMonitor: (
+        args: ObsidianDailyTodoCandidateMonitorStartInput
+      ): Promise<ObsidianDailyTodoCandidateMonitorStatusResult> =>
+        ipcRenderer.invoke('obsidianDailyTodos:candidates:monitor:start', args),
+      stopMonitor: (): Promise<ObsidianDailyTodoCandidateMonitorStatusResult> =>
+        ipcRenderer.invoke('obsidianDailyTodos:candidates:monitor:stop'),
+      monitorStatus: (): Promise<ObsidianDailyTodoCandidateMonitorStatusResult> =>
+        ipcRenderer.invoke('obsidianDailyTodos:candidates:monitor:status'),
+      onChanged: (
+        callback: (event?: ObsidianDailyTodoCandidateChangedEvent) => void
+      ): (() => void) => {
+        const listener = (
+          _event: Electron.IpcRendererEvent,
+          changedEvent?: ObsidianDailyTodoCandidateChangedEvent
+        ): void => callback(changedEvent)
+        ipcRenderer.on('obsidianDailyTodos:candidates:changed', listener)
+        return () => ipcRenderer.removeListener('obsidianDailyTodos:candidates:changed', listener)
+      },
+      onMonitorError: (callback: (message: string) => void): (() => void) => {
+        const listener = (_event: Electron.IpcRendererEvent, message: string): void =>
+          callback(message)
+        ipcRenderer.on('obsidianDailyTodos:candidates:monitorError', listener)
+        return () =>
+          ipcRenderer.removeListener('obsidianDailyTodos:candidates:monitorError', listener)
+      }
     }
   },
 

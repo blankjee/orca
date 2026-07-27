@@ -1,3 +1,8 @@
+/* Why: React Grab ships its own Tailwind utilities in development. Keep that
+   layer below Orca's utilities so generic classes such as `.hidden` cannot
+   override responsive app layout classes loaded earlier. */
+@layer react-grab, properties, theme, base, components, utilities;
+
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import '@xterm/xterm/css/xterm.css';

@@ -13,6 +13,7 @@ import {
 import { translate } from '@/i18n/i18n'
 import type { ObsidianDailyTodoItem } from '../../../shared/obsidian-daily-todo'
 import type { ObsidianDailyWorkRecord } from '../../../shared/obsidian-daily-work-record'
+import { ObsidianWorkRecordLinkPreviews } from './obsidian-work-record-link-previews'
 
 export function ObsidianDailyWorkRecordSheet({
   todo,
@@ -53,19 +54,22 @@ export function ObsidianDailyWorkRecordSheet({
           }}
         >
           <div className="min-h-0 flex-1 p-4">
-            <label className="flex h-full min-h-64 flex-col gap-2 text-xs font-medium text-muted-foreground">
-              {translate('auto.components.ObsidianDailyWorkRecordSheet.content', 'Content')}
-              <textarea
-                autoFocus
-                value={body}
-                onChange={(event) => setBody(event.target.value)}
-                placeholder={translate(
-                  'auto.components.ObsidianDailyWorkRecordSheet.placeholder',
-                  'Record progress, decisions, links, and follow-ups in Markdown…'
-                )}
-                className="min-h-0 flex-1 resize-none rounded-md border border-input bg-editor-surface p-3 font-mono text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
-              />
-            </label>
+            <div className="flex h-full min-h-64 flex-col gap-2">
+              <label className="flex min-h-0 flex-1 flex-col gap-2 text-xs font-medium text-muted-foreground">
+                {translate('auto.components.ObsidianDailyWorkRecordSheet.content', 'Content')}
+                <textarea
+                  autoFocus
+                  value={body}
+                  onChange={(event) => setBody(event.target.value)}
+                  placeholder={translate(
+                    'auto.components.ObsidianDailyWorkRecordSheet.placeholder',
+                    'Record progress, decisions, links, and follow-ups in Markdown…'
+                  )}
+                  className="min-h-0 flex-1 resize-none rounded-md border border-input bg-editor-surface p-3 font-mono text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </label>
+              <ObsidianWorkRecordLinkPreviews body={body} />
+            </div>
           </div>
           <SheetFooter className="flex-row justify-end border-t border-border">
             <Button

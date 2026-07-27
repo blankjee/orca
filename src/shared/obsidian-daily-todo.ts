@@ -5,6 +5,8 @@ export const OBSIDIAN_DAILY_TODO_STATUSES = [
   'cancelled'
 ] as const
 
+export const OBSIDIAN_DAILY_CHECK_GROUP = '每日check'
+
 export type ObsidianDailyTodoStatus = (typeof OBSIDIAN_DAILY_TODO_STATUSES)[number]
 
 export type ObsidianDailyTodoItem = {
@@ -104,6 +106,13 @@ export function parseObsidianDailyTodos(markdown: string): ObsidianDailyTodoItem
     if (heading?.[2].trim() === '工作记录') {
       workRecordHeadingLevel = heading[1].length
       group = null
+      priority = null
+      parents.length = 0
+      continue
+    }
+    if (heading && heading[1].length <= 2) {
+      // Why: checklist rows directly under 每日check are pinned Todos, not ungrouped leftovers.
+      group = isDailyCheckHeading(heading[2]) ? OBSIDIAN_DAILY_CHECK_GROUP : null
       priority = null
       parents.length = 0
       continue
@@ -246,5 +255,11 @@ function stableTodoId(lineNumber: number, text: string): string {
     hash = Math.imul(hash, 16_777_619)
   }
   return `${lineNumber}-${(hash >>> 0).toString(16)}`
+}
+
+function isDailyCheckHeading(heading: string): boolean {
+  return (
+    heading.replace(/\s+/g, '').toLocaleLowerCase() === OBSIDIAN_DAILY_CHECK_GROUP.toLowerCase()
+  )
 }
 import type { ObsidianDailyWorkRecord } from './obsidian-daily-work-record'

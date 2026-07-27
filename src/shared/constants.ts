@@ -32,6 +32,7 @@ import { DEFAULT_SOURCE_CONTROL_GROUP_ORDER } from './source-control-group-order
 import { DEFAULT_SETUP_AGENT_STARTUP_POLICY } from './setup-agent-startup-policy'
 import { DESKTOP_TERMINAL_SCROLLBACK_ROWS_DEFAULT } from './terminal-scrollback-policy'
 import { DEFAULT_USAGE_PERCENTAGE_DISPLAY } from './usage-percentage-display'
+import { DEFAULT_OBSIDIAN_AI_CAPTURE_SETTINGS } from './obsidian-ai-capture-settings'
 
 export { DEFAULT_STATUS_BAR_ITEMS } from './status-bar-defaults'
 export {
@@ -334,6 +335,7 @@ export function getDefaultSettings(homedir: string): GlobalSettings {
     visibleTaskProvidersDefaultedForObsidian: true,
     obsidianVault: '',
     obsidianDailyNotesDirectory: '',
+    obsidianAiCapture: { ...DEFAULT_OBSIDIAN_AI_CAPTURE_SETTINGS },
     defaultRepoSelection: null,
     defaultLinearTeamSelection: null,
     opencodeSessionCookie: '',

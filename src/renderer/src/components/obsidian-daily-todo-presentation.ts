@@ -2,6 +2,7 @@ import type {
   ObsidianDailyTodoItem,
   ObsidianDailyTodoStatus
 } from '../../../shared/obsidian-daily-todo'
+import { OBSIDIAN_DAILY_CHECK_GROUP } from '../../../shared/obsidian-daily-todo'
 
 export type ObsidianDailyTodoPriorityGroup = {
   priority: ObsidianDailyTodoItem['priority']
@@ -27,7 +28,8 @@ export type ObsidianDailyTodoOverview = {
   nextTodo: ObsidianDailyTodoItem | null
 }
 
-const PREFERRED_GROUP_ORDER = ['今日任务', '跟进任务']
+// Why: recurring checks are the user's pinned context and must precede every task group.
+const PREFERRED_GROUP_ORDER = [OBSIDIAN_DAILY_CHECK_GROUP, '今日任务', '跟进任务']
 const PRIORITY_ORDER: ObsidianDailyTodoItem['priority'][] = ['P1', 'P2', 'P3', null]
 
 export function groupObsidianDailyTodos(
@@ -64,6 +66,10 @@ export function getNextObsidianDailyTodoStatus(
     case 'cancelled':
       return 'pending'
   }
+}
+
+export function isObsidianDailyTodoTerminal(status: ObsidianDailyTodoStatus): boolean {
+  return status === 'completed' || status === 'cancelled'
 }
 
 export function getObsidianTodoDisplayText(text: string): string {

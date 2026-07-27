@@ -1,11 +1,48 @@
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-import { ObsidianDailyTodoCandidateService } from './obsidian-daily-todo-candidate-service'
+import {
+  ObsidianDailyTodoCandidateService,
+  readCandidateAnalyzerConfig
+} from './obsidian-daily-todo-candidate-service'
 
 describe('ObsidianDailyTodoCandidateService', () => {
+  it('builds analyzer configuration from persisted AI Capture settings', () => {
+    expect(
+      readCandidateAnalyzerConfig({
+        enabled: true,
+        endpoint: ' https://ark.example/api/v3/ ',
+        model: ' task-model ',
+        apiKey: ' secret-key ',
+        confidenceThreshold: 0.82
+      })
+    ).toEqual({
+      endpoint: 'https://ark.example/api/v3/',
+      model: 'task-model',
+      apiKey: 'secret-key',
+      confidenceThreshold: 0.82
+    })
+  })
+
+  it('keeps environment configuration as the fallback for legacy setups', () => {
+    vi.stubEnv('TODO_CAPTURE_LLM_ENDPOINT', ' https://legacy.example/v1 ')
+    vi.stubEnv('TODO_CAPTURE_LLM_MODEL', ' legacy-model ')
+    vi.stubEnv('TODO_CAPTURE_LLM_API_KEY', ' legacy-key ')
+    vi.stubEnv('TODO_CAPTURE_CONFIDENCE_THRESHOLD', '0.6')
+    try {
+      expect(readCandidateAnalyzerConfig()).toEqual({
+        endpoint: 'https://legacy.example/v1',
+        model: 'legacy-model',
+        apiKey: 'legacy-key',
+        confidenceThreshold: 0.6
+      })
+    } finally {
+      vi.unstubAllEnvs()
+    }
+  })
+
   it('stores analyzed candidates and dismisses them', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'orca-candidates-'))
     const filePath = join(directory, 'candidates.json')

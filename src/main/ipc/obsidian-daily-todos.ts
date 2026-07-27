@@ -2,9 +2,11 @@ import { ipcMain } from 'electron'
 
 import {
   addObsidianDailyTodoToNote,
+  deleteObsidianDailyTodoFromNote,
   loadObsidianDailyTodos,
   saveObsidianDailyWorkRecordToNote,
   setObsidianDailyTodoStatus,
+  updateObsidianDailyTodoPriorityInNote,
   updateObsidianDailyTodoTextInNote
 } from '../obsidian-daily-todo-service'
 import {
@@ -13,18 +15,54 @@ import {
   type ObsidianDailyTodoStatusUpdate
 } from '../../shared/obsidian-daily-todo'
 import type { ObsidianDailyTodoTextUpdate } from '../../shared/obsidian-daily-todo-text'
+import type {
+  ObsidianDailyTodoDeleteInput,
+  ObsidianDailyTodoPriorityUpdate
+} from '../../shared/obsidian-daily-todo-mutation'
 import type { ObsidianDailyWorkRecordSaveInput } from '../../shared/obsidian-daily-work-record'
-import { ObsidianDailyTodoCandidateService } from '../obsidian-daily-todo-candidate-service'
+import type { ObsidianWorkRecordLinkResolveInput } from '../../shared/obsidian-work-record-link'
+import {
+  ObsidianDailyTodoCandidateService,
+  readCandidateAnalyzerConfig
+} from '../obsidian-daily-todo-candidate-service'
+import { ObsidianDailyTodoCandidateMonitorController } from '../obsidian-daily-todo-candidate-monitor'
+import { resolveObsidianWorkRecordLinkTitles } from '../obsidian-work-record-link-title'
+import type { Store } from '../persistence'
+import { loadObsidianDailyTodoAnalytics } from '../obsidian-daily-todo-analytics-service'
 import type {
   ObsidianDailyTodoCandidateAcceptInput,
   ObsidianDailyTodoCandidateAnalyzeInput,
   ObsidianDailyTodoCandidateDismissInput,
+  ObsidianDailyTodoCandidateMonitorStartInput,
   ObsidianDailyTodoCandidateUpdateInput
 } from '../../shared/obsidian-daily-todo-candidate'
+import { registerObsidianDailyTodoFocusHandlers } from './obsidian-daily-todo-focus'
 
-const candidateService = new ObsidianDailyTodoCandidateService()
-
-export function registerObsidianDailyTodoHandlers(): void {
+export function registerObsidianDailyTodoHandlers(store: Pick<Store, 'getSettings'>): void {
+  registerObsidianDailyTodoFocusHandlers()
+  const candidateService = new ObsidianDailyTodoCandidateService({
+    // Why: read on every analysis so saving Settings takes effect without an app restart.
+    analyzerConfig: () => readCandidateAnalyzerConfig(store.getSettings().obsidianAiCapture)
+  })
+  const candidateMonitor = new ObsidianDailyTodoCandidateMonitorController(candidateService)
+  ipcMain.handle(
+    'obsidianDailyTodos:analytics',
+    (_event, args: { directory?: unknown; year?: unknown; refresh?: unknown }) => {
+      if (
+        typeof args?.directory !== 'string' ||
+        !Number.isInteger(args?.year) ||
+        Number(args.year) < 1970 ||
+        Number(args.year) > 9999
+      ) {
+        return invalidInput('Invalid Todo analytics input.')
+      }
+      return loadObsidianDailyTodoAnalytics(
+        args.directory,
+        Number(args.year),
+        args.refresh === true
+      )
+    }
+  )
   ipcMain.handle(
     'obsidianDailyTodos:load',
     (_event, args: { directory?: unknown; filePath?: unknown; refresh?: unknown }) =>
@@ -75,6 +113,21 @@ export function registerObsidianDailyTodoHandlers(): void {
     return updateObsidianDailyTodoTextInNote(args)
   })
   ipcMain.handle(
+    'obsidianDailyTodos:updatePriority',
+    (_event, args: ObsidianDailyTodoPriorityUpdate) => {
+      if (!hasValidTodoTarget(args) || !['P1', 'P2', 'P3'].includes(args.priority)) {
+        return invalidInput('Invalid todo priority update.')
+      }
+      return updateObsidianDailyTodoPriorityInNote(args)
+    }
+  )
+  ipcMain.handle('obsidianDailyTodos:delete', (_event, args: ObsidianDailyTodoDeleteInput) => {
+    if (!hasValidTodoTarget(args)) {
+      return invalidInput('Invalid todo deletion.')
+    }
+    return deleteObsidianDailyTodoFromNote(args)
+  })
+  ipcMain.handle(
     'obsidianDailyTodos:saveWorkRecord',
     (_event, args: ObsidianDailyWorkRecordSaveInput) => {
       if (
@@ -85,6 +138,20 @@ export function registerObsidianDailyTodoHandlers(): void {
         return invalidInput('Invalid work record update.')
       }
       return saveObsidianDailyWorkRecordToNote(args)
+    }
+  )
+  ipcMain.handle(
+    'obsidianDailyTodos:resolveWorkRecordLinks',
+    (_event, args: ObsidianWorkRecordLinkResolveInput) => {
+      if (
+        !args ||
+        !Array.isArray(args.urls) ||
+        args.urls.length > 12 ||
+        args.urls.some((url) => typeof url !== 'string' || url.length > 2_048)
+      ) {
+        return Promise.resolve({ links: [] })
+      }
+      return resolveObsidianWorkRecordLinkTitles(args)
     }
   )
 
@@ -103,6 +170,22 @@ export function registerObsidianDailyTodoHandlers(): void {
       return candidateService.analyzeText(args)
     }
   )
+
+  ipcMain.handle(
+    'obsidianDailyTodos:candidates:monitor:start',
+    (event, args: ObsidianDailyTodoCandidateMonitorStartInput) => {
+      if (!args || typeof args.directory !== 'string' || typeof args.filePath !== 'string') {
+        return {
+          ok: false as const,
+          code: 'invalid-input' as const,
+          message: 'Invalid monitor input.'
+        }
+      }
+      return candidateMonitor.start(args, event.sender)
+    }
+  )
+  ipcMain.handle('obsidianDailyTodos:candidates:monitor:stop', () => candidateMonitor.stop())
+  ipcMain.handle('obsidianDailyTodos:candidates:monitor:status', () => candidateMonitor.status())
   ipcMain.handle(
     'obsidianDailyTodos:candidates:update',
     (_event, args: ObsidianDailyTodoCandidateUpdateInput) => {
@@ -138,7 +221,10 @@ export function registerObsidianDailyTodoHandlers(): void {
 }
 
 function hasValidTodoTarget(
-  args: ObsidianDailyTodoTextUpdate | ObsidianDailyWorkRecordSaveInput
+  args:
+    | ObsidianDailyTodoTextUpdate
+    | ObsidianDailyWorkRecordSaveInput
+    | ObsidianDailyTodoDeleteInput
 ): boolean {
   return Boolean(
     args &&

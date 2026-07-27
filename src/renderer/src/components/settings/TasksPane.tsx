@@ -14,6 +14,8 @@ import { Button } from '../ui/button'
 import { SearchableSetting } from './SearchableSetting'
 import { SettingsSubsectionHeader } from './SettingsFormControls'
 import { translate } from '@/i18n/i18n'
+import { ObsidianAiCaptureSettingsSection } from './ObsidianAiCaptureSettingsSection'
+import { normalizeObsidianAiCaptureSettings } from '../../../../shared/obsidian-ai-capture-settings'
 
 type TasksPaneProps = {
   settings: GlobalSettings
@@ -277,6 +279,32 @@ export function TasksPane({ settings, updateSettings }: TasksPaneProps): React.J
               {translate('auto.components.settings.TasksPane.chooseDirectory', 'Choose')}
             </Button>
           </div>
+        </SearchableSetting>
+
+        <SearchableSetting
+          title={translate(
+            'auto.components.settings.ObsidianAiCaptureSettingsSection.title',
+            'AI Capture'
+          )}
+          description={translate(
+            'auto.components.settings.ObsidianAiCaptureSettingsSection.description',
+            'Extract Todo candidates from captured text using an OpenAI Responses-compatible endpoint.'
+          )}
+          keywords={[
+            'obsidian',
+            'ai capture',
+            'todo extraction',
+            'endpoint',
+            'model',
+            'api key',
+            'confidence'
+          ]}
+          className="py-2"
+        >
+          <ObsidianAiCaptureSettingsSection
+            settings={normalizeObsidianAiCaptureSettings(settings.obsidianAiCapture)}
+            onChange={(obsidianAiCapture) => updateSettings({ obsidianAiCapture })}
+          />
         </SearchableSetting>
       </section>
     </div>

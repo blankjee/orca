@@ -18,6 +18,7 @@ import type {
 import { isObsidianDailyTodoCandidatePriority } from '../shared/obsidian-daily-todo-candidate'
 import { ObsidianDailyTodoCandidateAnalyzer } from './obsidian-daily-todo-candidate-analyzer'
 import type { ObsidianDailyTodoCandidateAnalyzerConfig } from './obsidian-daily-todo-candidate-analyzer'
+import type { ObsidianAiCaptureSettings } from '../shared/obsidian-ai-capture-settings'
 
 export class ObsidianDailyTodoCandidateService {
   private candidates: ObsidianDailyTodoCandidate[] | null = null
@@ -166,12 +167,44 @@ export class ObsidianDailyTodoCandidateService {
   }
 }
 
-export function readCandidateAnalyzerConfig(): ObsidianDailyTodoCandidateAnalyzerConfig {
+export function readCandidateAnalyzerConfig(
+  settings?: ObsidianAiCaptureSettings
+): ObsidianDailyTodoCandidateAnalyzerConfig {
+  const storedEndpoint = settings?.endpoint.trim() ?? ''
+  const storedModel = settings?.model.trim() ?? ''
+  const storedApiKey = settings?.apiKey.trim() ?? ''
+  const environmentConfidenceThreshold = Number(process.env.TODO_CAPTURE_CONFIDENCE_THRESHOLD)
+  const fallbackConfidenceThreshold =
+    Number.isFinite(environmentConfidenceThreshold) &&
+    environmentConfidenceThreshold >= 0 &&
+    environmentConfidenceThreshold <= 1
+      ? environmentConfidenceThreshold
+      : 0.75
+  if (settings?.enabled === false) {
+    return {
+      endpoint: '',
+      model: '',
+      apiKey: '',
+      confidenceThreshold: settings?.confidenceThreshold ?? 0.75
+    }
+  }
   return {
-    endpoint: process.env.TODO_CAPTURE_LLM_ENDPOINT ?? '',
-    model: process.env.TODO_CAPTURE_LLM_MODEL ?? '',
-    apiKey: process.env.TODO_CAPTURE_LLM_API_KEY ?? '',
-    confidenceThreshold: Number(process.env.TODO_CAPTURE_CONFIDENCE_THRESHOLD) || 0.75
+    endpoint:
+      storedEndpoint ||
+      process.env.TODO_CAPTURE_LLM_ENDPOINT?.trim() ||
+      process.env.ARK_BASE_URL?.trim() ||
+      '',
+    model:
+      storedModel ||
+      process.env.TODO_CAPTURE_LLM_MODEL?.trim() ||
+      process.env.ARK_MODEL?.trim() ||
+      '',
+    apiKey:
+      storedApiKey ||
+      process.env.TODO_CAPTURE_LLM_API_KEY?.trim() ||
+      process.env.ARK_API_KEY?.trim() ||
+      '',
+    confidenceThreshold: settings?.confidenceThreshold ?? fallbackConfidenceThreshold
   }
 }
 

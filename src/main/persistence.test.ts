@@ -2188,6 +2188,64 @@ describe('Store', () => {
     expect(store.getRepos()).toHaveLength(1)
   })
 
+  it('persists AI Capture settings with the API key encrypted at rest', async () => {
+    const store = await createStore()
+    store.updateSettings({
+      obsidianAiCapture: {
+        enabled: true,
+        endpoint: 'https://ark.example/api/v3',
+        model: 'doubao-task-model',
+        apiKey: 'secret-api-key',
+        confidenceThreshold: 0.82
+      }
+    })
+    store.flush()
+
+    const persisted = readDataFile() as PersistedState
+    expect(persisted.settings.obsidianAiCapture).toMatchObject({
+      enabled: true,
+      endpoint: 'https://ark.example/api/v3',
+      model: 'doubao-task-model',
+      confidenceThreshold: 0.82
+    })
+    expect(persisted.settings.obsidianAiCapture?.apiKey).not.toBe('secret-api-key')
+
+    const reopened = await createStore()
+    expect(reopened.getSettings().obsidianAiCapture).toEqual({
+      enabled: true,
+      endpoint: 'https://ark.example/api/v3',
+      model: 'doubao-task-model',
+      apiKey: 'secret-api-key',
+      confidenceThreshold: 0.82
+    })
+  })
+
+  it('repairs malformed persisted AI Capture settings', async () => {
+    const persisted = getDefaultPersistedState(testState.dir)
+    writeDataFile({
+      ...persisted,
+      settings: {
+        ...persisted.settings,
+        obsidianAiCapture: {
+          enabled: 'yes',
+          endpoint: 123,
+          model: 'valid-model',
+          apiKey: null,
+          confidenceThreshold: 4
+        }
+      }
+    })
+
+    const store = await createStore()
+    expect(store.getSettings().obsidianAiCapture).toEqual({
+      enabled: false,
+      endpoint: '',
+      model: 'valid-model',
+      apiKey: '',
+      confidenceThreshold: 0.75
+    })
+  })
+
   it('migrates legacy commit-message AI settings to source-control AI on load', async () => {
     writeDataFile({
       schemaVersion: 1,

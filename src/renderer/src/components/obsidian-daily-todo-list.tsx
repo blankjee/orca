@@ -1,66 +1,78 @@
 import React, { useState } from 'react'
-import {
-  Ban,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  Circle,
-  CircleDot,
-  NotebookPen,
-  Sparkles
-} from 'lucide-react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 
-import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { translate } from '@/i18n/i18n'
 import { cn } from '@/lib/utils'
 import type {
   ObsidianDailyTodoItem,
   ObsidianDailyTodoStatus
 } from '../../../shared/obsidian-daily-todo'
+import type { ObsidianDailyTodoPriority } from '../../../shared/obsidian-daily-todo-mutation'
 import {
   getNextObsidianDailyTodoStatus,
   getObsidianTodoDisplayText,
+  isObsidianDailyTodoTerminal,
   type ObsidianDailyTodoFilter,
   type ObsidianDailyTodoGroup
 } from './obsidian-daily-todo-presentation'
+import { ObsidianDailyTodoStatusButton } from './obsidian-daily-todo-status-button'
+import { ObsidianDailyTodoRowTools } from './obsidian-daily-todo-row-tools'
+
+const NOOP_START_FOCUS = (): void => {}
 
 export function ObsidianDailyTodoList({
   groups,
   filter,
   highlightedTodoId,
+  selectedTodoId,
+  collapsed = false,
   busyTodoIds,
   workRecordTitles,
+  onSelectTodo,
   onStatusChange,
   onTextChange,
+  onPriorityChange,
+  onDelete,
   onOpenWorkRecord,
+  onStartFocus = NOOP_START_FOCUS,
   onAiExecute
 }: {
   groups: readonly ObsidianDailyTodoGroup[]
   filter: ObsidianDailyTodoFilter
   highlightedTodoId: string | null
+  selectedTodoId: string | null
+  collapsed?: boolean
   busyTodoIds: ReadonlySet<string>
   workRecordTitles: ReadonlySet<string>
+  onSelectTodo: (todo: ObsidianDailyTodoItem) => void
   onStatusChange: (todo: ObsidianDailyTodoItem, status: ObsidianDailyTodoStatus) => void
   onTextChange: (todo: ObsidianDailyTodoItem, text: string) => void
+  onPriorityChange: (todo: ObsidianDailyTodoItem, priority: ObsidianDailyTodoPriority) => void
+  onDelete: (todo: ObsidianDailyTodoItem) => void
   onOpenWorkRecord: (todo: ObsidianDailyTodoItem) => void
+  onStartFocus?: (todo: ObsidianDailyTodoItem) => void
   onAiExecute: (todo: ObsidianDailyTodoItem) => void
 }): React.JSX.Element {
   return (
     <div className="divide-y divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-card">
-      {groups.map((group, index) => (
+      {groups.map((group) => (
         <ObsidianDailyTodoGroupSection
           key={group.name}
           group={group}
-          accent={OBSIDIAN_DAILY_GROUP_ACCENTS[index % OBSIDIAN_DAILY_GROUP_ACCENTS.length]}
           filter={filter}
           highlightedTodoId={highlightedTodoId}
+          selectedTodoId={selectedTodoId}
+          collapsed={collapsed}
           busyTodoIds={busyTodoIds}
           workRecordTitles={workRecordTitles}
+          onSelectTodo={onSelectTodo}
           onStatusChange={onStatusChange}
           onTextChange={onTextChange}
+          onPriorityChange={onPriorityChange}
+          onDelete={onDelete}
           onOpenWorkRecord={onOpenWorkRecord}
+          onStartFocus={onStartFocus}
           onAiExecute={onAiExecute}
         />
       ))}
@@ -70,42 +82,58 @@ export function ObsidianDailyTodoList({
 
 function ObsidianDailyTodoGroupSection({
   group,
-  accent,
   filter,
   highlightedTodoId,
+  selectedTodoId,
+  collapsed,
   busyTodoIds,
   workRecordTitles,
+  onSelectTodo,
   onStatusChange,
   onTextChange,
+  onPriorityChange,
+  onDelete,
   onOpenWorkRecord,
+  onStartFocus,
   onAiExecute
 }: {
   group: ObsidianDailyTodoGroup
-  accent: string
   filter: ObsidianDailyTodoFilter
   highlightedTodoId: string | null
+  selectedTodoId: string | null
+  collapsed: boolean
   busyTodoIds: ReadonlySet<string>
   workRecordTitles: ReadonlySet<string>
+  onSelectTodo: (todo: ObsidianDailyTodoItem) => void
   onStatusChange: (todo: ObsidianDailyTodoItem, status: ObsidianDailyTodoStatus) => void
   onTextChange: (todo: ObsidianDailyTodoItem, text: string) => void
+  onPriorityChange: (todo: ObsidianDailyTodoItem, priority: ObsidianDailyTodoPriority) => void
+  onDelete: (todo: ObsidianDailyTodoItem) => void
   onOpenWorkRecord: (todo: ObsidianDailyTodoItem) => void
+  onStartFocus: (todo: ObsidianDailyTodoItem) => void
   onAiExecute: (todo: ObsidianDailyTodoItem) => void
 }): React.JSX.Element {
   const [open, setOpen] = useState(true)
   const todos = group.priorities.flatMap((priorityGroup) => priorityGroup.todos)
-  const activeTodos = todos.filter((todo) => !isTerminal(todo.status))
-  const terminalTodos = todos.filter((todo) => isTerminal(todo.status))
+  const activeTodos = todos.filter((todo) => !isObsidianDailyTodoTerminal(todo.status))
+  const terminalTodos = todos.filter((todo) => isObsidianDailyTodoTerminal(todo.status))
   const remaining = activeTodos.length
+  const displayedOpen = !collapsed && open
   return (
     <Collapsible
-      open={open}
-      onOpenChange={setOpen}
-      style={{ '--obsidian-daily-group-accent': accent } as React.CSSProperties}
+      open={displayedOpen}
+      onOpenChange={(nextOpen) => {
+        if (!collapsed) {
+          setOpen(nextOpen)
+        }
+      }}
     >
-      <CollapsibleTrigger className="flex w-full items-center gap-2 border-l-[3px] border-l-[var(--obsidian-daily-group-accent)] bg-[color-mix(in_srgb,var(--obsidian-daily-group-accent)_5%,var(--card))] px-3 py-2.5 text-left hover:bg-[color-mix(in_srgb,var(--obsidian-daily-group-accent)_9%,var(--card))]">
-        <ChevronDown className={cn('size-3.5 transition-transform', !open && '-rotate-90')} />
+      <CollapsibleTrigger className="flex w-full items-center gap-2 bg-muted/35 px-3 py-2 text-left hover:bg-accent">
+        <ChevronDown
+          className={cn('size-3.5 transition-transform', !displayedOpen && '-rotate-90')}
+        />
         <span className="text-sm font-semibold">{group.name}</span>
-        <span className="text-xs text-[var(--obsidian-daily-group-accent)]">
+        <span className="text-xs text-muted-foreground">
           {filter === 'all'
             ? translate(
                 'auto.components.ObsidianDailyTodoList.remainingCount',
@@ -124,11 +152,16 @@ function ObsidianDailyTodoGroupSection({
               key={todo.id}
               todo={todo}
               highlighted={todo.id === highlightedTodoId}
+              selected={todo.id === selectedTodoId}
               busy={busyTodoIds.has(todo.id)}
               hasWorkRecord={workRecordTitles.has(todo.text)}
+              onSelect={onSelectTodo}
               onStatusChange={onStatusChange}
               onTextChange={onTextChange}
+              onPriorityChange={onPriorityChange}
+              onDelete={onDelete}
               onOpenWorkRecord={onOpenWorkRecord}
+              onStartFocus={onStartFocus}
               onAiExecute={onAiExecute}
             />
           ))}
@@ -136,11 +169,16 @@ function ObsidianDailyTodoGroupSection({
             <CompletedTodoSection
               todos={terminalTodos}
               highlightedTodoId={highlightedTodoId}
+              selectedTodoId={selectedTodoId}
               busyTodoIds={busyTodoIds}
               workRecordTitles={workRecordTitles}
+              onSelectTodo={onSelectTodo}
               onStatusChange={onStatusChange}
               onTextChange={onTextChange}
+              onPriorityChange={onPriorityChange}
+              onDelete={onDelete}
               onOpenWorkRecord={onOpenWorkRecord}
+              onStartFocus={onStartFocus}
               onAiExecute={onAiExecute}
             />
           ) : null}
@@ -153,20 +191,30 @@ function ObsidianDailyTodoGroupSection({
 function CompletedTodoSection({
   todos,
   highlightedTodoId,
+  selectedTodoId,
   busyTodoIds,
   workRecordTitles,
+  onSelectTodo,
   onStatusChange,
   onTextChange,
+  onPriorityChange,
+  onDelete,
   onOpenWorkRecord,
+  onStartFocus,
   onAiExecute
 }: {
   todos: readonly ObsidianDailyTodoItem[]
   highlightedTodoId: string | null
+  selectedTodoId: string | null
   busyTodoIds: ReadonlySet<string>
   workRecordTitles: ReadonlySet<string>
+  onSelectTodo: (todo: ObsidianDailyTodoItem) => void
   onStatusChange: (todo: ObsidianDailyTodoItem, status: ObsidianDailyTodoStatus) => void
   onTextChange: (todo: ObsidianDailyTodoItem, text: string) => void
+  onPriorityChange: (todo: ObsidianDailyTodoItem, priority: ObsidianDailyTodoPriority) => void
+  onDelete: (todo: ObsidianDailyTodoItem) => void
   onOpenWorkRecord: (todo: ObsidianDailyTodoItem) => void
+  onStartFocus: (todo: ObsidianDailyTodoItem) => void
   onAiExecute: (todo: ObsidianDailyTodoItem) => void
 }): React.JSX.Element {
   const [open, setOpen] = useState(false)
@@ -184,11 +232,16 @@ function CompletedTodoSection({
             key={todo.id}
             todo={todo}
             highlighted={todo.id === highlightedTodoId}
+            selected={todo.id === selectedTodoId}
             busy={busyTodoIds.has(todo.id)}
             hasWorkRecord={workRecordTitles.has(todo.text)}
+            onSelect={onSelectTodo}
             onStatusChange={onStatusChange}
             onTextChange={onTextChange}
+            onPriorityChange={onPriorityChange}
+            onDelete={onDelete}
             onOpenWorkRecord={onOpenWorkRecord}
+            onStartFocus={onStartFocus}
             onAiExecute={onAiExecute}
           />
         ))}
@@ -201,19 +254,29 @@ function ObsidianDailyTodoRow({
   todo,
   busy,
   highlighted,
+  selected,
   hasWorkRecord,
+  onSelect,
   onStatusChange,
   onTextChange,
+  onPriorityChange,
+  onDelete,
   onOpenWorkRecord,
+  onStartFocus,
   onAiExecute
 }: {
   todo: ObsidianDailyTodoItem
   busy: boolean
   highlighted: boolean
+  selected: boolean
   hasWorkRecord: boolean
+  onSelect: (todo: ObsidianDailyTodoItem) => void
   onStatusChange: (todo: ObsidianDailyTodoItem, status: ObsidianDailyTodoStatus) => void
   onTextChange: (todo: ObsidianDailyTodoItem, text: string) => void
+  onPriorityChange: (todo: ObsidianDailyTodoItem, priority: ObsidianDailyTodoPriority) => void
+  onDelete: (todo: ObsidianDailyTodoItem) => void
   onOpenWorkRecord: (todo: ObsidianDailyTodoItem) => void
+  onStartFocus: (todo: ObsidianDailyTodoItem) => void
   onAiExecute: (todo: ObsidianDailyTodoItem) => void
 }): React.JSX.Element {
   const nextStatus = getNextObsidianDailyTodoStatus(todo.status)
@@ -231,38 +294,20 @@ function ObsidianDailyTodoRow({
   return (
     <div
       id={`obsidian-todo-${todo.id}`}
+      data-current={selected ? 'true' : undefined}
       className={cn(
-        'group flex min-h-9 items-center gap-2 rounded-md px-1.5 py-1 transition-colors hover:bg-accent',
-        todo.status === 'in-progress' &&
-          'bg-[color-mix(in_srgb,var(--obsidian-daily-in-progress)_5%,transparent)] hover:bg-[color-mix(in_srgb,var(--obsidian-daily-in-progress)_9%,transparent)]',
+        'group flex min-h-9 items-center gap-1 rounded-md px-1.5 py-1 transition-colors hover:bg-accent',
+        selected && 'bg-accent',
         highlighted && 'bg-accent ring-1 ring-border'
       )}
       style={{ marginLeft: `${Math.min(todo.depth, 5) * 18}px` }}
     >
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            disabled={busy}
-            onClick={() => onStatusChange(todo, nextStatus)}
-            aria-label={translate(
-              'auto.components.ObsidianDailyTodoList.advanceStatus',
-              'Advance todo status'
-            )}
-            className={cn('shrink-0', getTodoStatusColor(todo.status))}
-          >
-            <TodoStatusIcon status={todo.status} />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="left" sideOffset={6}>
-          {translate(
-            'auto.components.ObsidianDailyTodoList.statusCycleHint',
-            'Pending → In progress → Completed'
-          )}
-        </TooltipContent>
-      </Tooltip>
+      <ObsidianDailyTodoStatusButton
+        todo={todo}
+        status={nextStatus}
+        busy={busy}
+        onStatusChange={onStatusChange}
+      />
       {editing ? (
         <input
           autoFocus
@@ -282,12 +327,14 @@ function ObsidianDailyTodoRow({
           className="h-7 min-w-0 flex-1 rounded-md border border-input bg-input px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       ) : (
-        <span
+        <button
+          type="button"
           title={translate(
             'auto.components.ObsidianDailyTodoList.doubleClickToEdit',
             'Double-click to edit: {{value0}}',
             { value0: todo.text }
           )}
+          onClick={() => onSelect(todo)}
           onDoubleClick={() => {
             if (!busy) {
               setDraft(todo.text)
@@ -295,112 +342,29 @@ function ObsidianDailyTodoRow({
             }
           }}
           className={cn(
-            'min-w-0 flex-1 cursor-text truncate text-sm',
-            isTerminal(todo.status) && 'text-muted-foreground line-through'
+            'line-clamp-2 min-w-0 flex-1 cursor-text break-words rounded-sm py-0.5 text-left text-sm leading-5 outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            isObsidianDailyTodoTerminal(todo.status) && 'text-muted-foreground line-through'
           )}
         >
           {getObsidianTodoDisplayText(todo.text)}
-        </span>
+        </button>
       )}
       {todo.timeText ? (
         <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
           {todo.timeText}
         </span>
       ) : null}
-      {todo.priority ? (
-        <span
-          className={cn(
-            'w-6 shrink-0 text-right text-[10px] font-semibold',
-            todo.priority === 'P1'
-              ? 'text-obsidian-daily-priority'
-              : todo.priority === 'P2'
-                ? 'text-obsidian-daily-pending'
-                : 'text-muted-foreground'
-          )}
-        >
-          {todo.priority}
-        </span>
-      ) : null}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            onClick={() => onOpenWorkRecord(todo)}
-            aria-label={translate(
-              'auto.components.ObsidianDailyTodoList.workRecord',
-              'Work record'
-            )}
-            className={cn(
-              'shrink-0 text-muted-foreground transition-colors hover:text-foreground',
-              hasWorkRecord && 'text-obsidian-daily-compose-accent'
-            )}
-          >
-            <NotebookPen className="size-3.5" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="left" sideOffset={6}>
-          {translate('auto.components.ObsidianDailyTodoList.workRecord', 'Work record')}
-        </TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            onClick={() => onAiExecute(todo)}
-            aria-label={translate(
-              'auto.components.ObsidianDailyTodoList.runWithAi',
-              'Run this Todo with AI'
-            )}
-            className="shrink-0 text-muted-foreground opacity-60 transition-opacity hover:text-obsidian-daily-compose-accent hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100"
-          >
-            <Sparkles className="size-3.5" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="left" sideOffset={6}>
-          {translate('auto.components.ObsidianDailyTodoList.runWithAi', 'Run this Todo with AI')}
-        </TooltipContent>
-      </Tooltip>
+      <ObsidianDailyTodoRowTools
+        todo={todo}
+        busy={busy}
+        selected={selected}
+        hasWorkRecord={hasWorkRecord}
+        onPriorityChange={onPriorityChange}
+        onDelete={onDelete}
+        onStartFocus={onStartFocus}
+        onOpenWorkRecord={onOpenWorkRecord}
+        onAiExecute={onAiExecute}
+      />
     </div>
   )
 }
-
-function TodoStatusIcon({ status }: { status: ObsidianDailyTodoStatus }): React.JSX.Element {
-  switch (status) {
-    case 'pending':
-      return <Circle className="size-4" />
-    case 'in-progress':
-      return <CircleDot className="size-4" />
-    case 'completed':
-      return <CheckCircle2 className="size-4" />
-    case 'cancelled':
-      return <Ban className="size-4" />
-  }
-}
-
-function isTerminal(status: ObsidianDailyTodoStatus): boolean {
-  return status === 'completed' || status === 'cancelled'
-}
-
-function getTodoStatusColor(status: ObsidianDailyTodoStatus): string {
-  switch (status) {
-    case 'pending':
-      return 'text-obsidian-daily-pending'
-    case 'in-progress':
-      return 'text-obsidian-daily-in-progress'
-    case 'completed':
-      return 'text-obsidian-daily-completed'
-    case 'cancelled':
-      return 'text-muted-foreground'
-  }
-}
-
-const OBSIDIAN_DAILY_GROUP_ACCENTS = [
-  'var(--obsidian-daily-date-accent)',
-  'var(--obsidian-daily-overview-accent)',
-  'var(--obsidian-daily-compose-accent)',
-  'var(--obsidian-daily-pending)'
-] as const

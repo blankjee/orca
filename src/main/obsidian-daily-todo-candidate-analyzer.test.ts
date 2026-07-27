@@ -60,4 +60,28 @@ describe('parseCandidateResponse', () => {
 
     expect(candidates).toMatchObject([{ title: 'Ship docs', context: 'From pasted text' }])
   })
+
+  it('falls back to reminder parsing when model returns no JSON', () => {
+    const candidates = parseCandidateResponse('', {
+      sourceText: '提示我写周报',
+      sourceApp: '飞书',
+      now: 3000,
+      confidenceThreshold: 0.75
+    })
+
+    expect(candidates).toMatchObject([
+      {
+        id: 'candidate-3000-fallback',
+        title: '写周报',
+        context: '从提醒语句提取',
+        sourceText: '提示我写周报',
+        sourceApp: '飞书',
+        confidence: 0.85,
+        priority: 'P2',
+        group: '今日任务',
+        createdAt: 3000,
+        status: 'pending'
+      }
+    ])
+  })
 })

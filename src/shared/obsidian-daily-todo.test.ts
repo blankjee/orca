@@ -35,6 +35,10 @@ describe('Obsidian daily todos', () => {
       'completed',
       'cancelled'
     ])
+    expect(todos[0]).toMatchObject({
+      group: '每日check',
+      priority: null
+    })
     expect(todos[1]).toMatchObject({
       group: '今日任务',
       priority: 'P1',
@@ -42,6 +46,14 @@ describe('Obsidian daily todos', () => {
       timeText: '09:30'
     })
     expect(todos[2]).toMatchObject({ depth: 1, parentId: todos[1].id })
+  })
+
+  it('accepts spacing and case variants for the daily check heading without leaking groups', () => {
+    const todos = parseObsidianDailyTodos(
+      '## 每日 Check\n- [ ] pinned\n## Notes\n- [ ] ungrouped\n'
+    )
+
+    expect(todos.map((todo) => todo.group)).toEqual(['每日check', null])
   })
 
   it('updates only the matching checklist marker while preserving content', () => {
