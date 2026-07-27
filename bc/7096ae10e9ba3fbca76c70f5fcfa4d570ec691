@@ -1,0 +1,203 @@
+docs/obsidian-ai-capture-task.md
+  s_8cf6fa83a5bc6c::t_f6bf60e32d5660 365-367,369-370,379
+src/main/codex-accounts/runtime-home-service.test.ts
+  s_8cf6fa83a5bc6c::t_5f80e5d61cfea3 129
+src/main/codex-accounts/service.test.ts
+  s_8cf6fa83a5bc6c::t_4a5b84beb5a366 134
+src/main/ipc/obsidian-daily-todo-focus.ts
+  s_8cf6fa83a5bc6c::t_1b6f086ef408db 1-81
+src/main/ipc/obsidian-daily-todos.ts
+  s_8cf6fa83a5bc6c::t_ae6e2eb3d169f7 5,9,18-21,23-31,36,39,41-65,115-129,143-156,173-188,224-227
+src/main/ipc/register-core-handlers.test.ts
+  s_8cf6fa83a5bc6c::t_65555bca99403a 523
+src/main/ipc/register-core-handlers.ts
+  s_8cf6fa83a5bc6c::t_a0078656287792 172
+src/main/obsidian-daily-todo-analytics-service.ts
+  s_8cf6fa83a5bc6c::t_50a6cb2db3867a 1-117
+src/main/obsidian-daily-todo-ax-reader.ts
+  s_8cf6fa83a5bc6c::t_77ed50d4639f2c 1-147
+src/main/obsidian-daily-todo-candidate-analyzer.test.ts
+  s_8cf6fa83a5bc6c::t_4fc7d7b6dc2af9 63-86
+src/main/obsidian-daily-todo-candidate-analyzer.ts
+  s_8cf6fa83a5bc6c::t_ffff45ec6fd3d1 33-37,73,81-89,91-92,103,126-153,165,175,178-213,221-223,225-226,230
+src/main/obsidian-daily-todo-candidate-monitor.ts
+  s_8cf6fa83a5bc6c::t_bb68bc462a6d98 1-111
+src/main/obsidian-daily-todo-candidate-service.test.ts
+  s_8cf6fa83a5bc6c::t_ee32b154f73735 4,6-9,12-45
+src/main/obsidian-daily-todo-candidate-service.ts
+  s_8cf6fa83a5bc6c::t_c918e30cf17d25 21,170-190,192-207
+src/main/obsidian-daily-todo-file-access.ts
+  s_8cf6fa83a5bc6c::t_52cbdfc4cefee5 1-70
+src/main/obsidian-daily-todo-focus-service.test.ts
+  s_8cf6fa83a5bc6c::t_e5a8a78f208fd4 1-122
+src/main/obsidian-daily-todo-focus-service.ts
+  s_8cf6fa83a5bc6c::t_0c1379e723f9e0 1-271
+src/main/obsidian-daily-todo-input-monitor.ts
+  s_8cf6fa83a5bc6c::t_18cae1284f8ab6 1-237
+src/main/obsidian-daily-todo-service.test.ts
+  s_8cf6fa83a5bc6c::t_c09919ae5203b4 8,12,15,20-58,142-179
+src/main/obsidian-daily-todo-service.ts
+  s_8cf6fa83a5bc6c::t_fa0df676309c01 2,18-23,35-43,57,67,75,81,90,92-93,99,108,110,121,124,128-143,149,151,173,176-197,209,238,275
+src/main/obsidian-work-record-link-title.test.ts
+  s_8cf6fa83a5bc6c::t_8d390a69b744f2 1-39
+src/main/obsidian-work-record-link-title.ts
+  s_8cf6fa83a5bc6c::t_fffd0f68b80fd6 1-161
+src/main/persistence.test.ts
+  s_8cf6fa83a5bc6c::t_05c34d792b1de2 2191-2248
+src/main/persistence.ts
+  s_8cf6fa83a5bc6c::t_d908a26a39ee2d 218,2897-2905,3716-3718,3724-3728,5373-5377
+src/preload/api-types.ts
+  s_8cf6fa83a5bc6c::t_821eb6ed997c48 59-69,71-74,76-79,85,88-89,2287,2296-2297,2299-2313,2328-2334
+src/preload/index.ts
+  s_8cf6fa83a5bc6c::t_0d2a7b5923a032 107-117,119-122,124-127,133,136-137,2254-2255,2267-2270,2273-2304,2323-2348
+src/renderer/src/assets/main.css
+  s_8cf6fa83a5bc6c::t_7335e84a0e4cc7 1-5
+src/renderer/src/components/ObsidianDailyTodoPanel.tsx
+  s_8cf6fa83a5bc6c::t_43ef5c41b4119d 12,15-19,21-24,30,54-57,62-63,76,101-103,110-133,140,142,155-165,183-209,218-220,229-232,236-240,272,276,287,290,301,308,310,321,326-327,330-331,340-343,345,352-366,371,380-385,388-390,392,394-410,412-415
+src/renderer/src/components/obsidian-daily-date-header.tsx
+  s_8cf6fa83a5bc6c::t_ef7d723b8f8269 44-46,60-64,69,93,100-115,117-118,140,158-159,163,166-168
+src/renderer/src/components/obsidian-daily-todo-add-form.tsx
+  s_8cf6fa83a5bc6c::t_cfad62f58aed26 1-96
+src/renderer/src/components/obsidian-daily-todo-analytics-charts.tsx
+  s_8cf6fa83a5bc6c::t_6e90aac6c7668b 1-195
+src/renderer/src/components/obsidian-daily-todo-analytics-presentation.test.ts
+  s_8cf6fa83a5bc6c::t_3c4d588918fd9c 1-56
+src/renderer/src/components/obsidian-daily-todo-analytics-presentation.ts
+  s_8cf6fa83a5bc6c::t_1eb17b91e6d1d4 1-100
+src/renderer/src/components/obsidian-daily-todo-analytics.tsx
+  s_8cf6fa83a5bc6c::t_c9b17dcdb4abb6 1-222
+src/renderer/src/components/obsidian-daily-todo-candidate-panel.test.tsx
+  s_8cf6fa83a5bc6c::t_590f7fd754b21f 1-45
+src/renderer/src/components/obsidian-daily-todo-candidate-panel.tsx
+  s_8cf6fa83a5bc6c::t_5126470438be60 2,5,8,18,23,39,44,49-50,52-58,60-92,94-112,114-123,125-126,128-135,150-164,167-218,238-248,253,256,258,262,267,271,275-279,289,293,298-299,306
+src/renderer/src/components/obsidian-daily-todo-candidate-sheet.tsx
+  s_8cf6fa83a5bc6c::t_d4055949107c6f 1-45
+src/renderer/src/components/obsidian-daily-todo-compact-filters.tsx
+  s_8cf6fa83a5bc6c::t_4fabd116c7dbdd 1-65
+src/renderer/src/components/obsidian-daily-todo-focus-panel.tsx
+  s_8cf6fa83a5bc6c::t_67b9da200732c4 1-206
+src/renderer/src/components/obsidian-daily-todo-list.test.tsx
+  s_8cf6fa83a5bc6c::t_f1e3be5660275e 27-86,96,99,102-103,123,126,129-130,153,156,159-160,170-198
+src/renderer/src/components/obsidian-daily-todo-list.tsx
+  s_8cf6fa83a5bc6c::t_065f4a7c8f8d7a 2,11,15,19-22,28-29,32,35-36,38,44-45,48,51-52,54,59,65-66,69,72-73,75,87-88,91,94-95,97,103-104,107,110-111,113,118-119,121,124-129,131-134,136,155,158,161-162,164,172,175,178-179,181,194,197,200-201,203,208,211,214-215,217,235,238,241-242,244,257,259,262-263,265,271,273,276-277,279,297,299-300,305-310,330-331,337,345-346,350,357-367
+src/renderer/src/components/obsidian-daily-todo-panel-content.tsx
+  s_8cf6fa83a5bc6c::t_382ee69a78d648 2,5,12-19,22-26,32-39,49-50,53-54,57,63-66,72-73,75,78,82,87-88,90-96,98-103,114-115,118-119,128-131,137-138,143,149-150,152-161,163-170,174,180-184,186-199,201-204,206-252,254-290,292-297,299-334
+src/renderer/src/components/obsidian-daily-todo-panel-overlays.tsx
+  s_8cf6fa83a5bc6c::t_65e0ea12838cae 1-118
+src/renderer/src/components/obsidian-daily-todo-panel-states.tsx
+  s_8cf6fa83a5bc6c::t_2151e7e39f5a14 1-129
+src/renderer/src/components/obsidian-daily-todo-presentation.test.ts
+  s_8cf6fa83a5bc6c::t_8a2da65fcaa98a 38,42-44
+src/renderer/src/components/obsidian-daily-todo-presentation.ts
+  s_8cf6fa83a5bc6c::t_7f84577bedb2a2 5,31-32,71-74
+src/renderer/src/components/obsidian-daily-todo-rail-width.test.ts
+  s_8cf6fa83a5bc6c::t_2bea3cea8564ba 1-32
+src/renderer/src/components/obsidian-daily-todo-rail-width.ts
+  s_8cf6fa83a5bc6c::t_ee155286bcfb50 1-33
+src/renderer/src/components/obsidian-daily-todo-resize-handle.test.tsx
+  s_8cf6fa83a5bc6c::t_07dbe03897600e 1-29
+src/renderer/src/components/obsidian-daily-todo-resize-handle.tsx
+  s_8cf6fa83a5bc6c::t_1a0aff7aa878eb 1-70
+src/renderer/src/components/obsidian-daily-todo-result.ts
+  s_8cf6fa83a5bc6c::t_a46fe4c8262537 1-49
+src/renderer/src/components/obsidian-daily-todo-row-actions.tsx
+  s_8cf6fa83a5bc6c::t_cad269325928dd 1-152
+src/renderer/src/components/obsidian-daily-todo-row-tools.tsx
+  s_8cf6fa83a5bc6c::t_aad5d61b89ef66 1-108
+src/renderer/src/components/obsidian-daily-todo-status-button.tsx
+  s_8cf6fa83a5bc6c::t_dda91c1c2648f5 1-53
+src/renderer/src/components/obsidian-daily-todo-status-icon.tsx
+  s_8cf6fa83a5bc6c::t_3cf4cefb97b5f5 1-34
+src/renderer/src/components/obsidian-daily-todo-workspace.test.tsx
+  s_8cf6fa83a5bc6c::t_911fb93e8a8984 1-93
+src/renderer/src/components/obsidian-daily-todo-workspace.tsx
+  s_8cf6fa83a5bc6c::t_9f6a4b3d086053 1-405
+src/renderer/src/components/obsidian-daily-work-record-sheet.tsx
+  s_8cf6fa83a5bc6c::t_652a14b6ca7a28 16,57-72
+src/renderer/src/components/obsidian-work-record-link-previews.test.tsx
+  s_8cf6fa83a5bc6c::t_36051da5792803 1-50
+src/renderer/src/components/obsidian-work-record-link-previews.tsx
+  s_8cf6fa83a5bc6c::t_9d105e4836632c 1-82
+src/renderer/src/components/settings/ObsidianAiCaptureSettingsSection.test.tsx
+  s_8cf6fa83a5bc6c::t_c2c709bfe82539 1-53
+src/renderer/src/components/settings/ObsidianAiCaptureSettingsSection.tsx
+  s_8cf6fa83a5bc6c::t_6067ff64e10746 1-159
+src/renderer/src/components/settings/TasksPane.tsx
+  s_8cf6fa83a5bc6c::t_97ee646d3f9477 17-18,283-308
+src/renderer/src/components/settings/tasks-search.ts
+  s_8cf6fa83a5bc6c::t_b32444dc0ba434 28-43
+src/renderer/src/components/use-obsidian-daily-todo-candidates.ts
+  s_8cf6fa83a5bc6c::t_867338be780b25 31,33,45,61-104,119,121-127,133-164,228,230
+src/renderer/src/components/use-obsidian-daily-todo-dashboard.ts
+  s_8cf6fa83a5bc6c::t_41ec2154b5a837 1-81
+src/renderer/src/components/use-obsidian-daily-todo-focus.ts
+  s_8cf6fa83a5bc6c::t_958894e9996979 1-127
+src/renderer/src/components/use-obsidian-daily-todo-mutations.ts
+  s_8cf6fa83a5bc6c::t_7029b4f3cc044a 1-84
+src/renderer/src/components/use-obsidian-daily-todo-rail-resize.ts
+  s_8cf6fa83a5bc6c::t_0ba2ba3a379d6a 1-45
+src/renderer/src/components/use-obsidian-daily-todo-workspace-breakpoint.ts
+  s_8cf6fa83a5bc6c::t_db37cdb296e30e 1-17
+src/renderer/src/i18n/locales/en.json
+  s_8cf6fa83a5bc6c::t_38c56eec14056b 6612-6626,8236,13091-13092,13104-13110,13151-13218,13234-13260
+src/renderer/src/i18n/locales/es.json
+  s_8cf6fa83a5bc6c::t_2b7f2de244ab3b 6575-6589,8199,13091-13092,13104-13110,13151-13218,13234-13260
+src/renderer/src/i18n/locales/ja.json
+  s_8cf6fa83a5bc6c::t_3afa5045b09d41 6597-6611,8221,13091-13092,13104-13110,13151-13218,13234-13260
+src/renderer/src/i18n/locales/ko.json
+  s_8cf6fa83a5bc6c::t_e07be31405212d 6560-6574,8184,13091-13092,13104-13110,13151-13218,13234-13260
+src/renderer/src/i18n/locales/zh.json
+  s_8cf6fa83a5bc6c::t_8b0231339d7df9 6560-6574,8184,13091-13092,13104-13110,13151-13218,13234-13260
+src/renderer/src/main.tsx
+  s_8cf6fa83a5bc6c::t_f81b7949dfa81a 27-37
+src/renderer/src/web/web-preload-api.ts
+  s_8cf6fa83a5bc6c::t_709943c9f42888 2787,2792-2842
+src/shared/constants.ts
+  s_8cf6fa83a5bc6c::t_d848194b600464 35,338
+src/shared/obsidian-ai-capture-settings.ts
+  s_8cf6fa83a5bc6c::t_e44d9c0f31d833 1-36
+src/shared/obsidian-daily-focus-record.test.ts
+  s_8cf6fa83a5bc6c::t_d339653c8b70ec 1-45
+src/shared/obsidian-daily-focus-record.ts
+  s_8cf6fa83a5bc6c::t_513f96bac069e8 1-55
+src/shared/obsidian-daily-todo-analytics.ts
+  s_8cf6fa83a5bc6c::t_3584072b872aab 1-27
+src/shared/obsidian-daily-todo-candidate.ts
+  s_8cf6fa83a5bc6c::t_f0d37127d4e232 79-94
+src/shared/obsidian-daily-todo-focus.ts
+  s_8cf6fa83a5bc6c::t_ff4950378e5cdb 1-78
+src/shared/obsidian-daily-todo-insertion.ts
+  s_8cf6fa83a5bc6c::t_0ce277b0a5d069 9-19,23-24
+src/shared/obsidian-daily-todo-mutation.test.ts
+  s_8cf6fa83a5bc6c::t_9468b35723b390 1-46
+src/shared/obsidian-daily-todo-mutation.ts
+  s_8cf6fa83a5bc6c::t_c90105523cb173 1-91
+src/shared/obsidian-daily-todo.test.ts
+  s_8cf6fa83a5bc6c::t_91c85e84bc3bcf 38-41,51-58
+src/shared/obsidian-daily-todo.ts
+  s_8cf6fa83a5bc6c::t_c6eaa2b13bd211 8-9,113-119,259-264
+src/shared/obsidian-work-record-link.test.ts
+  s_8cf6fa83a5bc6c::t_840ffd7fe9d166 1-39
+src/shared/obsidian-work-record-link.ts
+  s_8cf6fa83a5bc6c::t_50f09b2e869a8d 1-80
+src/shared/types.ts
+  s_8cf6fa83a5bc6c::t_d772b74584aab6 3,2797-2799
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "bc7096ae10e9ba3fbca76c70f5fcfa4d570ec691",
+  "prompts": {},
+  "sessions": {
+    "s_8cf6fa83a5bc6c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f87d7-20ee-72a2-8cd5-a1534315ab6c",
+        "model": "unknown"
+      },
+      "human_author": "huangjie.sc <huangjie.sc@bytedance.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
