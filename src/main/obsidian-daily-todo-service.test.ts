@@ -79,6 +79,40 @@ describe('Obsidian daily todo service', () => {
     }
   })
 
+  it('recovers the vault root when a nested current-month folder was configured', async () => {
+    const vault = await mkdtemp(join(tmpdir(), 'orca-obsidian-vault-'))
+    const configuredMonth = join(vault, '1_📅Daily', '2026', '07')
+    await mkdir(join(vault, '.obsidian'), { recursive: true })
+    await mkdir(configuredMonth, { recursive: true })
+    await mkdir(join(vault, '1_📅Daily', '2026', '06'), { recursive: true })
+    await mkdir(join(vault, '1_📅Daily', '2025', '12'), { recursive: true })
+    await writeFile(join(configuredMonth, '2026-07-16.md'), '- [ ] current month\n')
+    await writeFile(
+      join(vault, '1_📅Daily', '2026', '06', '2026-06-30.md'),
+      '- [x] previous month\n'
+    )
+    await writeFile(
+      join(vault, '1_📅Daily', '2025', '12', '2025-12-31.md'),
+      '- [x] previous year\n'
+    )
+
+    const result = await loadObsidianDailyTodos(configuredMonth, undefined, TODAY)
+    const analytics = await loadObsidianDailyTodoAnalytics(configuredMonth, 2026, true)
+
+    expect(result).toMatchObject({
+      ok: true,
+      snapshot: {
+        dailyNotes: [{ date: '2026-07-16' }, { date: '2026-06-30' }, { date: '2025-12-31' }]
+      }
+    })
+    expect(analytics).toMatchObject({
+      ok: true,
+      analytics: {
+        days: [{ date: '2026-07-16' }, { date: '2026-06-30' }]
+      }
+    })
+  })
+
   it('writes status changes back to the located daily note', async () => {
     const directory = await mkdtemp(join(tmpdir(), 'orca-obsidian-todos-'))
     const filePath = join(directory, '2026-07-16.md')

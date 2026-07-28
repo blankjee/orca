@@ -1,4 +1,4 @@
-import { isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { readdir, realpath, stat } from 'node:fs/promises'
 
 import type { ObsidianDailyNoteSummary } from '../shared/obsidian-daily-todo'
@@ -25,16 +25,36 @@ export async function resolveObsidianVaultRoot(rawDirectory: string): Promise<st
     )
   }
   try {
-    const root = await realpath(resolve(directory))
-    if (!(await stat(root)).isDirectory()) {
+    const selectedDirectory = await realpath(resolve(directory))
+    if (!(await stat(selectedDirectory)).isDirectory()) {
       throw new Error('not a directory')
     }
-    return root
+    return await findNearestObsidianVaultRoot(selectedDirectory)
   } catch {
     throw new ObsidianDailyNoteDiscoveryError(
       'directory-not-found',
       'The configured Obsidian vault directory is unavailable.'
     )
+  }
+}
+
+async function findNearestObsidianVaultRoot(selectedDirectory: string): Promise<string> {
+  let candidate = selectedDirectory
+  while (true) {
+    try {
+      if ((await stat(join(candidate, '.obsidian'))).isDirectory()) {
+        // Why: older builds could persist the current month folder, which
+        // silently hid the rest of the vault from history and analytics.
+        return candidate
+      }
+    } catch {
+      // A missing marker is expected while walking toward the filesystem root.
+    }
+    const parent = dirname(candidate)
+    if (parent === candidate) {
+      return selectedDirectory
+    }
+    candidate = parent
   }
 }
 
