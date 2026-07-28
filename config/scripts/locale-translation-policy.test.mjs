@@ -555,14 +555,6 @@ describe('locale-translation-policy', () => {
         locale: 'zh'
       })
     ).toBe('启动：')
-    expect(
-      repairTranslatedValue({
-        key: 'auto.components.UpdateCard.actionBadge',
-        enValue: 'Action',
-        localeValue: '行动',
-        locale: 'zh'
-      })
-    ).toBe('操作')
   })
 
   it('applies search keyword overrides for settings search synonyms', () => {

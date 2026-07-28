@@ -1,0 +1,215 @@
+import { execFile } from 'node:child_process'
+
+export type ObsidianDailyTodoAxSnapshot = {
+  bundleId: string
+  appName: string
+  windowTitle: string
+  role: string
+  value: string
+  monitored?: boolean
+}
+
+export class ObsidianDailyTodoAxPermissionError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ObsidianDailyTodoAxPermissionError'
+  }
+}
+
+const SEP = '|@@@|'
+const TIMEOUT_MS = 3000
+let lastErrorLogAt = 0
+
+const SCRIPT = `set sep to "${SEP}"
+set allowedBundleIds to {__ALLOWED_BUNDLE_IDS__}
+
+on getVal(elem)
+	tell application "System Events"
+		try
+			set v to value of attribute "AXValue" of elem
+			if v is not missing value then return v as text
+		end try
+	end tell
+	return ""
+end getVal
+
+on getRole(elem)
+	tell application "System Events"
+		try
+			return value of attribute "AXRole" of elem as text
+		end try
+	end tell
+	return ""
+end getRole
+
+on getKids(elem)
+	tell application "System Events"
+		try
+			set k to value of attribute "AXChildren" of elem
+			if k is missing value then return {}
+			return k
+		end try
+	end tell
+	return {}
+end getKids
+
+on collectText(rootElem, maxNodes, maxChars)
+	set queue to {rootElem}
+	set visited to 0
+	set combined to ""
+	set seenValues to {}
+	repeat while (count of queue) > 0
+		if visited >= maxNodes then exit repeat
+		set cur to item 1 of queue
+		if (count of queue) > 1 then
+			set queue to items 2 thru -1 of queue
+		else
+			set queue to {}
+		end if
+		set visited to visited + 1
+		set r to my getRole(cur)
+		if r is "AXTextArea" or r is "AXTextField" or r is "AXComboBox" or r is "AXStaticText" then
+			set v to my getVal(cur)
+			if v is not "" and seenValues does not contain v then
+				set remainingChars to maxChars - (count characters of combined)
+				if remainingChars <= 0 then exit repeat
+				if (count characters of v) > remainingChars then
+					set v to text 1 thru remainingChars of v
+				end if
+				set end of seenValues to v
+				if combined is "" then
+					set combined to v
+				else
+					set combined to combined & linefeed & v
+				end if
+			end if
+		end if
+		set kids to my getKids(cur)
+		repeat with k in kids
+			set queue to queue & {(contents of k)}
+		end repeat
+	end repeat
+	return combined
+end collectText
+
+tell application "System Events"
+	try
+		set p to first application process whose frontmost is true
+		set bid to ""
+		try
+			set bid to bundle identifier of p
+		end try
+		set pname to ""
+		try
+			set pname to name of p
+		end try
+		if allowedBundleIds does not contain bid then
+			return bid & sep & pname & sep & "" & sep & "" & sep & "0" & sep & ""
+		end if
+		set winTitle to ""
+		try
+			set winTitle to name of front window of p
+		end try
+		set roleStr to ""
+		set valStr to ""
+		set fe to missing value
+		try
+			set fe to value of attribute "AXFocusedUIElement" of p
+			set roleStr to my getRole(fe)
+		end try
+		-- Why: chat composers sit near the end of large accessibility trees.
+		-- Reading the focused subtree first prevents a long Feishu thread from hiding typed text.
+		try
+			if fe is not missing value then set valStr to my collectText(fe, 80, 8000)
+		end try
+		if valStr is "" then
+			try
+				set valStr to my collectText(front window of p, 320, 8000)
+			end try
+		end if
+		return bid & sep & pname & sep & winTitle & sep & roleStr & sep & "1" & sep & valStr
+	on error errMsg number errNum
+		return "ERROR" & sep & errNum & sep & errMsg & sep & "" & sep & "0" & sep & ""
+	end try
+end tell`
+
+export function readObsidianDailyTodoAxSnapshot(
+  allowedBundleIds: readonly string[] = [],
+  ignoredPhrases: readonly string[] = []
+): Promise<ObsidianDailyTodoAxSnapshot | null> {
+  return new Promise((resolve, reject) => {
+    const allowedBundleIdList = allowedBundleIds
+      .filter((bundleId) => /^[A-Za-z0-9.-]{3,160}$/.test(bundleId))
+      .map((bundleId) => `"${bundleId}"`)
+      .join(', ')
+    const script = SCRIPT.replace('__ALLOWED_BUNDLE_IDS__', allowedBundleIdList)
+    const child = execFile(
+      '/usr/bin/osascript',
+      ['-e', script],
+      { timeout: TIMEOUT_MS, maxBuffer: 1024 * 1024 },
+      (error, stdout, stderr) => {
+        if (error) {
+          const now = Date.now()
+          if (now - lastErrorLogAt > 5000) {
+            lastErrorLogAt = now
+            console.warn(
+              `[obsidian-ai-capture][ax] osascript failed: ${error.message} | stderr=${(stderr || '').slice(0, 200)}`
+            )
+          }
+          resolve(null)
+          return
+        }
+        const raw = (stdout || '').replace(/\n$/, '')
+        if (!raw) {
+          resolve(null)
+          return
+        }
+        const parts = raw.split(SEP)
+        if (parts.length < 6) {
+          resolve(null)
+          return
+        }
+        if (parts[0] === 'ERROR') {
+          const errorNumber = parts[1] || 'unknown'
+          const detail = parts[2] || 'System Events could not read the active app.'
+          reject(
+            new ObsidianDailyTodoAxPermissionError(
+              `macOS blocked Todo monitoring (${errorNumber}): ${detail}`
+            )
+          )
+          return
+        }
+        resolve({
+          bundleId: parts[0] || 'unknown',
+          appName: parts[1] || 'Unknown',
+          windowTitle: parts[2] || '',
+          role: parts[3] || '',
+          monitored: parts[4] === '1',
+          value: removeIgnoredPhrases(parts.slice(5).join(SEP), ignoredPhrases)
+        })
+      }
+    )
+    child.on('error', () => resolve(null))
+  })
+}
+
+function removeIgnoredPhrases(value: string, ignoredPhrases: readonly string[]): string {
+  const ignored = new Set(
+    ignoredPhrases.map(normalizeIgnoredPhrase).filter((phrase) => phrase.length > 0)
+  )
+  if (ignored.size === 0) {
+    return value
+  }
+  return value
+    .split(/\r?\n/u)
+    .filter((line) => !ignored.has(normalizeIgnoredPhrase(line)))
+    .join('\n')
+    .trim()
+}
+
+function normalizeIgnoredPhrase(value: string): string {
+  return value
+    .trim()
+    .replace(/[“”]/gu, '"')
+    .replace(/\s+/gu, ' ')
+}

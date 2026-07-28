@@ -15,10 +15,24 @@ const {
   prunePackagedSherpaOnnx,
   prunePackagedRuntimeTypeDeclarations,
   prunePackagedZodSources,
-  verifyPackagedMainRuntimeDeps
+  verifyPackagedMainRuntimeDeps,
+  verifyPackagedRendererEntry,
+  verifyPackagedRuntimePackageFiles
 } = require('../packaged-runtime-node-modules.cjs')
 
 describe('electron-builder config', () => {
+  it('always packages the compiled renderer entry', () => {
+    expect(electronBuilderConfig.files).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          from: 'out/renderer',
+          to: 'out/renderer',
+          filter: ['**/*']
+        })
+      ])
+    )
+  })
+
   it('excludes repo-only source trees from app.asar', () => {
     expect(electronBuilderConfig.files).toEqual(
       expect.arrayContaining([
@@ -171,6 +185,19 @@ describe('electron-builder config', () => {
     expect(findAsarEntry(['/out/main/index.js'], 'out/main/index.js')).toBe('/out/main/index.js')
   })
 
+  it('rejects a packaged app that is missing the renderer entry', async () => {
+    const resourcesDir = await mkdtemp(join(tmpdir(), 'orca-renderer-integrity-'))
+    try {
+      await writeFile(join(resourcesDir, 'app.asar'), '', 'utf8')
+
+      expect(() =>
+        verifyPackagedRendererEntry(resourcesDir, { listPackage: () => ['/out/main/index.js'] })
+      ).toThrow('Packaged renderer entry out/renderer/index.html was not found')
+    } finally {
+      await rm(resourcesDir, { recursive: true, force: true })
+    }
+  })
+
   it('prunes non-target node-pty prebuilds from packaged runtime resources', async () => {
     const resourcesDir = await mkdtemp(join(tmpdir(), 'orca-node-pty-prune-'))
     try {
@@ -249,6 +276,35 @@ describe('electron-builder config', () => {
         target.startsWith(join('node_modules', '@parcel', 'watcher-'))
       )
     ).toBe(true)
+  })
+
+  it('excludes type declarations before copying packaged runtime resources', () => {
+    const packaged = createPackagedRuntimeNodeModuleResources()
+    expect(packaged).not.toHaveLength(0)
+    for (const resource of packaged) {
+      expect(resource.filter).toEqual(
+        expect.arrayContaining(['**/*', '!**/*.d.ts', '!**/*.d.cts', '!**/*.d.mts'])
+      )
+    }
+  })
+
+  it('rejects an incomplete qrcode runtime package', async () => {
+    const resourcesDir = await mkdtemp(join(tmpdir(), 'orca-runtime-integrity-'))
+    try {
+      const packageDir = join(resourcesDir, 'node_modules', 'qrcode')
+      await mkdir(join(packageDir, 'lib', 'core'), { recursive: true })
+      await writeFile(join(packageDir, 'package.json'), '{}', 'utf8')
+      await writeFile(join(packageDir, 'lib', 'index.js'), 'module.exports = {}', 'utf8')
+
+      expect(() => verifyPackagedRuntimePackageFiles(resourcesDir)).toThrow(
+        'qrcode/lib/core/qrcode.js'
+      )
+
+      await writeFile(join(packageDir, 'lib', 'core', 'qrcode.js'), 'module.exports = {}', 'utf8')
+      expect(() => verifyPackagedRuntimePackageFiles(resourcesDir)).not.toThrow()
+    } finally {
+      await rm(resourcesDir, { recursive: true, force: true })
+    }
   })
 
   it('prunes non-target @parcel/watcher platform subpackages from packaged runtime resources', async () => {
@@ -359,6 +415,13 @@ describe('electron-builder config', () => {
         const launcherPath = join(resourcesDir, 'bin', 'orca-ide')
         await mkdir(join(resourcesDir, 'bin'), { recursive: true })
         await mkdir(join(resourcesDir, 'node_modules', 'zod', 'src'), { recursive: true })
+        // Why: afterPack validates the runtime package that previously produced
+        // a launch-time crash, so this layout mirrors its required files.
+        const qrcodeDir = join(resourcesDir, 'node_modules', 'qrcode')
+        await mkdir(join(qrcodeDir, 'lib', 'core'), { recursive: true })
+        await writeFile(join(qrcodeDir, 'package.json'), '{}', 'utf8')
+        await writeFile(join(qrcodeDir, 'lib', 'index.js'), 'module.exports = {}', 'utf8')
+        await writeFile(join(qrcodeDir, 'lib', 'core', 'qrcode.js'), 'module.exports = {}', 'utf8')
         // Why: afterPack now fails hard when the unpacked daemon entry is
         // missing, so the fixture must carry one like a real package layout.
         const unpackedMainDir = join(resourcesDir, 'app.asar.unpacked', 'out', 'main')

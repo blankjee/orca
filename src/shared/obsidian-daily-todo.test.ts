@@ -5,6 +5,7 @@ import {
   parseObsidianDailyTodos,
   updateObsidianDailyTodoStatus
 } from './obsidian-daily-todo'
+import { updateObsidianDailyTodoText } from './obsidian-daily-todo-text'
 
 const MARKDOWN = `# 工作计划
 ## 每日check
@@ -34,6 +35,10 @@ describe('Obsidian daily todos', () => {
       'completed',
       'cancelled'
     ])
+    expect(todos[0]).toMatchObject({
+      group: '每日check',
+      priority: null
+    })
     expect(todos[1]).toMatchObject({
       group: '今日任务',
       priority: 'P1',
@@ -41,6 +46,14 @@ describe('Obsidian daily todos', () => {
       timeText: '09:30'
     })
     expect(todos[2]).toMatchObject({ depth: 1, parentId: todos[1].id })
+  })
+
+  it('accepts spacing and case variants for the daily check heading without leaking groups', () => {
+    const todos = parseObsidianDailyTodos(
+      '## 每日 Check\n- [ ] pinned\n## Notes\n- [ ] ungrouped\n'
+    )
+
+    expect(todos.map((todo) => todo.group)).toEqual(['每日check', null])
   })
 
   it('updates only the matching checklist marker while preserving content', () => {
@@ -56,6 +69,21 @@ describe('Obsidian daily todos', () => {
     const changedOnDisk = 'intro\n- [ ] same\n- [ ] same\n'
 
     expect(updateObsidianDailyTodoStatus(changedOnDisk, todo, 'completed')).toBeNull()
+  })
+
+  it('updates todo text while preserving its checklist marker and indentation', () => {
+    const todo = parseObsidianDailyTodos(MARKDOWN)[2]
+    const updated = updateObsidianDailyTodoText(MARKDOWN, todo, 'renamed child')
+
+    expect(updated).toContain('  - [x] renamed child')
+  })
+
+  it('ignores checklists inside the work record section', () => {
+    const markdown = `${MARKDOWN}\n## 工作记录\n### parent 09:30\n- [ ] note checklist\n`
+
+    expect(parseObsidianDailyTodos(markdown).map((todo) => todo.text)).not.toContain(
+      'note checklist'
+    )
   })
 
   it('adds a todo at the end of the selected group and priority section', () => {

@@ -617,8 +617,6 @@ describe('Store', () => {
     expect(ui.rightSidebarTab).toBe('explorer')
     expect(ui.groupBy).toBe('repo')
     expect(ui.lastActiveRepoId).toBeNull()
-    expect(ui.dismissedUpdateVersion).toBeNull()
-    expect(ui.lastUpdateCheckAt).toBeNull()
     expect(ui.setupGuideSidebarDismissed).toBe(false)
     expect(ui.setupGuideBrowserMilestoneMigrated).toBe(true)
     expect(ui.setupGuideBrowserMilestoneLegacyComplete).toBe(false)
@@ -2188,6 +2186,74 @@ describe('Store', () => {
     expect(store.getSettings().notifications.customSoundPath).toBeNull()
     // repos should be loaded
     expect(store.getRepos()).toHaveLength(1)
+  })
+
+  it('persists AI Capture settings with the API key encrypted at rest', async () => {
+    const store = await createStore()
+    store.updateSettings({
+      obsidianAiCapture: {
+        enabled: true,
+        endpoint: 'https://ark.example/api/v3',
+        model: 'doubao-task-model',
+        apiKey: 'secret-api-key',
+        confidenceThreshold: 0.82,
+        monitorAllowedBundleIds: ['com.bytedance.ee.lark', 'com.tinyspeck.slackmacgap'],
+        monitorIgnoredPhrases: ['沟通时请保持“公开可接受”']
+      }
+    })
+    store.flush()
+
+    const persisted = readDataFile() as PersistedState
+    expect(persisted.settings.obsidianAiCapture).toMatchObject({
+      enabled: true,
+      endpoint: 'https://ark.example/api/v3',
+      model: 'doubao-task-model',
+      confidenceThreshold: 0.82,
+      monitorAllowedBundleIds: ['com.bytedance.ee.lark', 'com.tinyspeck.slackmacgap'],
+      monitorIgnoredPhrases: ['沟通时请保持“公开可接受”']
+    })
+    expect(persisted.settings.obsidianAiCapture?.apiKey).not.toBe('secret-api-key')
+
+    const reopened = await createStore()
+    expect(reopened.getSettings().obsidianAiCapture).toEqual({
+      enabled: true,
+      endpoint: 'https://ark.example/api/v3',
+      model: 'doubao-task-model',
+      apiKey: 'secret-api-key',
+      confidenceThreshold: 0.82,
+      monitorAllowedBundleIds: ['com.bytedance.ee.lark', 'com.tinyspeck.slackmacgap'],
+      monitorIgnoredPhrases: ['沟通时请保持“公开可接受”']
+    })
+  })
+
+  it('repairs malformed persisted AI Capture settings', async () => {
+    const persisted = getDefaultPersistedState(testState.dir)
+    writeDataFile({
+      ...persisted,
+      settings: {
+        ...persisted.settings,
+        obsidianAiCapture: {
+          enabled: 'yes',
+          endpoint: 123,
+          model: 'valid-model',
+          apiKey: null,
+          confidenceThreshold: 4,
+          monitorAllowedBundleIds: ['bad id', 'com.bytedance.ee.lark', 'com.bytedance.ee.lark'],
+          monitorIgnoredPhrases: ['', '固定提示', '固定提示']
+        }
+      }
+    })
+
+    const store = await createStore()
+    expect(store.getSettings().obsidianAiCapture).toEqual({
+      enabled: false,
+      endpoint: '',
+      model: 'valid-model',
+      apiKey: '',
+      confidenceThreshold: 0.75,
+      monitorAllowedBundleIds: ['com.bytedance.ee.lark'],
+      monitorIgnoredPhrases: ['固定提示']
+    })
   })
 
   it('migrates legacy commit-message AI settings to source-control AI on load', async () => {
@@ -5442,7 +5508,6 @@ describe('Store', () => {
     const ui = store.getUI()
     expect(ui.sidebarWidth).toBe(400)
     expect(ui.groupBy).toBe('repo') // default preserved
-    expect(ui.dismissedUpdateVersion).toBeNull()
   })
 
   it('round-trips and normalizes the host-qualified manual repo order', async () => {
@@ -5953,14 +6018,6 @@ describe('Store', () => {
     store.updateUI({ worktreeCardProperties: ['inline-agents'] })
 
     expect(store.getUI().worktreeCardProperties).toEqual(['status', 'unread', 'inline-agents'])
-  })
-
-  it('persists updater reminder metadata in UI state', async () => {
-    const store = await createStore()
-    store.updateUI({ dismissedUpdateVersion: '1.0.99', lastUpdateCheckAt: 1234 })
-    const ui = store.getUI()
-    expect(ui.dismissedUpdateVersion).toBe('1.0.99')
-    expect(ui.lastUpdateCheckAt).toBe(1234)
   })
 
   it('normalizes default browser zoom UI writes', async () => {

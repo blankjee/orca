@@ -131,6 +131,7 @@ function createSettings(overrides: Partial<GlobalSettings> = {}): GlobalSettings
     visibleTaskProvidersDefaultedForJira: true,
     visibleTaskProvidersDefaultedForObsidian: true,
     obsidianVault: '',
+    obsidianDailyNotesDirectory: '',
     defaultRepoSelection: null,
     defaultLinearTeamSelection: null,
     opencodeSessionCookie: '',

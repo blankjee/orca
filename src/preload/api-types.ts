@@ -56,6 +56,40 @@ import type {
   ObsidianDailyTodoResult,
   ObsidianDailyTodoStatusUpdate
 } from '../shared/obsidian-daily-todo'
+import type {
+  ObsidianDailyTodoAnalyticsInput,
+  ObsidianDailyTodoAnalyticsResult
+} from '../shared/obsidian-daily-todo-analytics'
+import type {
+  ObsidianDailyTodoFocusFinishResult,
+  ObsidianDailyTodoFocusSession,
+  ObsidianDailyTodoFocusStartInput,
+  ObsidianDailyTodoFocusStateResult,
+  ObsidianDailyTodoFocusUpdateInput
+} from '../shared/obsidian-daily-todo-focus'
+import type { ObsidianDailyTodoTextUpdate } from '../shared/obsidian-daily-todo-text'
+import type {
+  ObsidianDailyTodoDeleteInput,
+  ObsidianDailyTodoPriorityUpdate
+} from '../shared/obsidian-daily-todo-mutation'
+import type { ObsidianDailyWorkRecordSaveInput } from '../shared/obsidian-daily-work-record'
+import type {
+  ObsidianWorkRecordLinkResolveInput,
+  ObsidianWorkRecordLinkResolveResult
+} from '../shared/obsidian-work-record-link'
+import type {
+  ObsidianDailyTodoCandidateAcceptInput,
+  ObsidianDailyTodoCandidateAcceptResult,
+  ObsidianDailyTodoCandidateAnalyzeInput,
+  ObsidianDailyTodoCandidateAnalyzeResult,
+  ObsidianDailyTodoCandidateChangedEvent,
+  ObsidianDailyTodoCandidateDismissInput,
+  ObsidianDailyTodoCandidateListResult,
+  ObsidianDailyTodoCandidateMonitorStartInput,
+  ObsidianDailyTodoCandidateMonitorStatusResult,
+  ObsidianDailyTodoCandidateMutationResult,
+  ObsidianDailyTodoCandidateUpdateInput
+} from '../shared/obsidian-daily-todo-candidate'
 import type { LinearIssueAttributeFilter } from '../shared/linear-issue-attribute-filter'
 import type { ProjectExecutionRuntimeResolution } from '../shared/project-execution-runtime'
 import type { StartupCommandDelivery } from '../shared/codex-startup-delivery'
@@ -209,8 +243,6 @@ import type {
   StatsSummary,
   MemorySnapshot,
   TuiAgent,
-  UpdateCheckOptions,
-  UpdateStatus,
   Worktree,
   WorktreeBaseStatusEvent,
   WorktreeHeadIdentity,
@@ -2252,6 +2284,7 @@ export type PreloadApi = {
     copyFile: (args: { srcPath: string; destPath: string }) => Promise<void>
   }
   obsidianDailyTodos: {
+    analytics: (args: ObsidianDailyTodoAnalyticsInput) => Promise<ObsidianDailyTodoAnalyticsResult>
     load: (args: {
       directory: string
       filePath?: string
@@ -2259,6 +2292,47 @@ export type PreloadApi = {
     }) => Promise<ObsidianDailyTodoResult>
     setStatus: (args: ObsidianDailyTodoStatusUpdate) => Promise<ObsidianDailyTodoResult>
     add: (args: ObsidianDailyTodoAddInput) => Promise<ObsidianDailyTodoResult>
+    updateText: (args: ObsidianDailyTodoTextUpdate) => Promise<ObsidianDailyTodoResult>
+    updatePriority: (args: ObsidianDailyTodoPriorityUpdate) => Promise<ObsidianDailyTodoResult>
+    delete: (args: ObsidianDailyTodoDeleteInput) => Promise<ObsidianDailyTodoResult>
+    saveWorkRecord: (args: ObsidianDailyWorkRecordSaveInput) => Promise<ObsidianDailyTodoResult>
+    resolveWorkRecordLinks: (
+      args: ObsidianWorkRecordLinkResolveInput
+    ) => Promise<ObsidianWorkRecordLinkResolveResult>
+    focus: {
+      get: () => Promise<ObsidianDailyTodoFocusStateResult>
+      start: (args: ObsidianDailyTodoFocusStartInput) => Promise<ObsidianDailyTodoFocusStateResult>
+      pause: () => Promise<ObsidianDailyTodoFocusStateResult>
+      resume: () => Promise<ObsidianDailyTodoFocusStateResult>
+      update: (
+        args: ObsidianDailyTodoFocusUpdateInput
+      ) => Promise<ObsidianDailyTodoFocusStateResult>
+      finish: () => Promise<ObsidianDailyTodoFocusFinishResult>
+      abandon: () => Promise<ObsidianDailyTodoFocusStateResult>
+      onChanged: (callback: (session: ObsidianDailyTodoFocusSession | null) => void) => () => void
+    }
+    candidates: {
+      list: () => Promise<ObsidianDailyTodoCandidateListResult>
+      analyzeText: (
+        args: ObsidianDailyTodoCandidateAnalyzeInput
+      ) => Promise<ObsidianDailyTodoCandidateAnalyzeResult>
+      update: (
+        args: ObsidianDailyTodoCandidateUpdateInput
+      ) => Promise<ObsidianDailyTodoCandidateMutationResult>
+      accept: (
+        args: ObsidianDailyTodoCandidateAcceptInput
+      ) => Promise<ObsidianDailyTodoCandidateAcceptResult>
+      dismiss: (
+        args: ObsidianDailyTodoCandidateDismissInput
+      ) => Promise<ObsidianDailyTodoCandidateMutationResult>
+      startMonitor: (
+        args: ObsidianDailyTodoCandidateMonitorStartInput
+      ) => Promise<ObsidianDailyTodoCandidateMonitorStatusResult>
+      stopMonitor: () => Promise<ObsidianDailyTodoCandidateMonitorStatusResult>
+      monitorStatus: () => Promise<ObsidianDailyTodoCandidateMonitorStatusResult>
+      onChanged: (callback: (event?: ObsidianDailyTodoCandidateChangedEvent) => void) => () => void
+      onMonitorError: (callback: (message: string, fatal?: boolean) => void) => () => void
+    }
   }
   skills: {
     discover: (target?: SkillDiscoveryTarget) => Promise<SkillDiscoveryResult>
@@ -2396,16 +2470,6 @@ export type PreloadApi = {
     }) => Promise<{ targetId: string; clients: RemoteWorkspaceConnectedClient[] }[]>
     clientId: () => Promise<string>
     onChanged: (callback: (event: RemoteWorkspaceChangedEvent) => void) => () => void
-  }
-  updater: {
-    getVersion: () => Promise<string>
-    getStatus: () => Promise<UpdateStatus>
-    check: (options?: UpdateCheckOptions) => Promise<void>
-    download: () => Promise<void>
-    quitAndInstall: () => Promise<void>
-    dismissNudge: () => Promise<void>
-    onStatus: (callback: (status: UpdateStatus) => void) => () => void
-    onClearDismissal: (callback: () => void) => () => void
   }
   notebook: {
     runPythonCell: (args: {

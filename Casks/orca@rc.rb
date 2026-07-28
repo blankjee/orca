@@ -27,9 +27,6 @@ cask "orca@rc" do
     end
   end
 
-  # Why: RC installs should follow Orca's prerelease-aware updater instead of
-  # waiting for Homebrew metadata churn between frequent release candidates.
-  auto_updates true
   conflicts_with cask: "orca"
   depends_on macos: :big_sur
 

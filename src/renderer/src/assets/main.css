@@ -1,3 +1,8 @@
+/* Why: React Grab ships its own Tailwind utilities in development. Keep that
+   layer below Orca's utilities so generic classes such as `.hidden` cannot
+   override responsive app layout classes loaded earlier. */
+@layer react-grab, properties, theme, base, components, utilities;
+
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import '@xterm/xterm/css/xterm.css';
@@ -101,6 +106,13 @@
   --color-status-success: var(--status-success);
   --color-status-success-background: var(--status-success-background);
   --color-status-success-border: var(--status-success-border);
+  --color-obsidian-daily-date-accent: var(--obsidian-daily-date-accent);
+  --color-obsidian-daily-overview-accent: var(--obsidian-daily-overview-accent);
+  --color-obsidian-daily-compose-accent: var(--obsidian-daily-compose-accent);
+  --color-obsidian-daily-pending: var(--obsidian-daily-pending);
+  --color-obsidian-daily-in-progress: var(--obsidian-daily-in-progress);
+  --color-obsidian-daily-completed: var(--obsidian-daily-completed);
+  --color-obsidian-daily-priority: var(--obsidian-daily-priority);
   --color-tab-group-split-divider: var(--tab-group-split-divider);
   --color-tab-group-split-divider-strong: var(--tab-group-split-divider-strong);
   --color-git-graph-ref: var(--git-graph-ref);
@@ -155,6 +167,15 @@
   --status-success: #15803d;
   --status-success-background: color-mix(in srgb, var(--status-success) 10%, transparent);
   --status-success-border: color-mix(in srgb, var(--status-success) 25%, transparent);
+  /* Why: the daily-note screen uses restrained semantic accents to separate
+     modules and task states without turning the surrounding IDE chrome colorful. */
+  --obsidian-daily-date-accent: var(--color-violet-600);
+  --obsidian-daily-overview-accent: var(--color-blue-600);
+  --obsidian-daily-compose-accent: var(--color-teal-600);
+  --obsidian-daily-pending: var(--color-amber-700);
+  --obsidian-daily-in-progress: var(--color-blue-600);
+  --obsidian-daily-completed: var(--status-success);
+  --obsidian-daily-priority: var(--color-red-700);
   --chart-1: var(--color-blue-300);
   --chart-2: var(--color-blue-500);
   --chart-3: var(--color-blue-600);
@@ -241,6 +262,13 @@
   --status-success: #86efac;
   --status-success-background: color-mix(in srgb, var(--status-success) 10%, transparent);
   --status-success-border: color-mix(in srgb, var(--status-success) 25%, transparent);
+  --obsidian-daily-date-accent: var(--color-violet-400);
+  --obsidian-daily-overview-accent: var(--color-blue-400);
+  --obsidian-daily-compose-accent: var(--color-teal-400);
+  --obsidian-daily-pending: var(--color-amber-400);
+  --obsidian-daily-in-progress: var(--color-blue-400);
+  --obsidian-daily-completed: var(--status-success);
+  --obsidian-daily-priority: var(--color-red-300);
   --chart-1: var(--color-blue-300);
   --chart-2: var(--color-blue-500);
   --chart-3: var(--color-blue-600);

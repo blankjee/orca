@@ -1,5 +1,5 @@
 import { basename } from 'node:path'
-import { readFile, realpath, stat, writeFile } from 'node:fs/promises'
+import { realpath, stat } from 'node:fs/promises'
 
 import {
   addObsidianDailyTodo,
@@ -12,11 +12,35 @@ import {
   type ObsidianDailyTodoStatusUpdate
 } from '../shared/obsidian-daily-todo'
 import {
+  updateObsidianDailyTodoText,
+  type ObsidianDailyTodoTextUpdate
+} from '../shared/obsidian-daily-todo-text'
+import {
+  deleteObsidianDailyTodo,
+  updateObsidianDailyTodoPriority,
+  type ObsidianDailyTodoDeleteInput,
+  type ObsidianDailyTodoPriorityUpdate
+} from '../shared/obsidian-daily-todo-mutation'
+import {
+  parseObsidianDailyWorkRecords,
+  renameObsidianDailyWorkRecord,
+  saveObsidianDailyWorkRecord,
+  type ObsidianDailyWorkRecordSaveInput
+} from '../shared/obsidian-daily-work-record'
+import {
   chooseBestObsidianDailyNote,
   discoverObsidianDailyNotes,
-  ObsidianDailyNoteDiscoveryError,
   resolveObsidianVaultRoot
 } from './obsidian-daily-note-discovery'
+import {
+  formatObsidianDailyLocalDate,
+  ObsidianDailyTodoServiceError,
+  obsidianDailyTodoServiceErrorResult,
+  readObsidianDailyTodoMarkdown,
+  validateObsidianDailyTodoText,
+  validateObsidianDailyWorkRecordBody,
+  writeObsidianDailyTodoMarkdown
+} from './obsidian-daily-todo-file-access'
 
 export async function loadObsidianDailyTodos(
   directory: string,
@@ -30,7 +54,7 @@ export async function loadObsidianDailyTodos(
       snapshot: await readSnapshot(directory, filePath, now, forceDiscovery)
     }
   } catch (error) {
-    return serviceErrorResult(error)
+    return obsidianDailyTodoServiceErrorResult(error)
   }
 }
 
@@ -40,7 +64,7 @@ export async function setObsidianDailyTodoStatus(
 ): Promise<ObsidianDailyTodoResult> {
   try {
     const target = await resolveRequestedNote(input.directory, input.filePath, now)
-    const markdown = await readMarkdown(target.filePath)
+    const markdown = await readObsidianDailyTodoMarkdown(target.filePath)
     const updated = updateObsidianDailyTodoStatus(markdown, input.todo, input.status)
     if (updated === null) {
       throw new ObsidianDailyTodoServiceError(
@@ -48,13 +72,13 @@ export async function setObsidianDailyTodoStatus(
         'The todo changed on disk. Refresh before updating it.'
       )
     }
-    await writeMarkdown(target.filePath, updated)
+    await writeObsidianDailyTodoMarkdown(target.filePath, updated)
     return {
       ok: true,
       snapshot: await readSnapshot(input.directory, target.filePath, now)
     }
   } catch (error) {
-    return serviceErrorResult(error)
+    return obsidianDailyTodoServiceErrorResult(error)
   }
 }
 
@@ -63,16 +87,127 @@ export async function addObsidianDailyTodoToNote(
   now: Date = new Date()
 ): Promise<ObsidianDailyTodoResult> {
   try {
-    validateTodoText(input.text)
+    validateObsidianDailyTodoText(input.text)
+    if (input.workRecordBody) {
+      validateObsidianDailyWorkRecordBody(input.workRecordBody)
+    }
     const target = await resolveRequestedNote(input.directory, input.filePath, now)
-    const markdown = await readMarkdown(target.filePath)
-    await writeMarkdown(target.filePath, addObsidianDailyTodo(markdown, input))
+    const markdown = await readObsidianDailyTodoMarkdown(target.filePath)
+    const withTodo = addObsidianDailyTodo(markdown, input)
+    const updated = input.workRecordBody
+      ? saveObsidianDailyWorkRecord(withTodo, input.text.trim(), input.workRecordBody, null)
+      : withTodo
+    if (updated === null) {
+      throw new ObsidianDailyTodoServiceError(
+        'todo-conflict',
+        'A work record for this Todo already exists.'
+      )
+    }
+    await writeObsidianDailyTodoMarkdown(target.filePath, updated)
     return {
       ok: true,
       snapshot: await readSnapshot(input.directory, target.filePath, now)
     }
   } catch (error) {
-    return serviceErrorResult(error)
+    return obsidianDailyTodoServiceErrorResult(error)
+  }
+}
+
+export async function updateObsidianDailyTodoTextInNote(
+  input: ObsidianDailyTodoTextUpdate,
+  now: Date = new Date()
+): Promise<ObsidianDailyTodoResult> {
+  try {
+    validateObsidianDailyTodoText(input.text)
+    const target = await resolveRequestedNote(input.directory, input.filePath, now)
+    const markdown = await readObsidianDailyTodoMarkdown(target.filePath)
+    const updatedTodo = updateObsidianDailyTodoText(markdown, input.todo, input.text)
+    const updated = updatedTodo
+      ? renameObsidianDailyWorkRecord(updatedTodo, input.todo.text, input.text.trim())
+      : null
+    if (updated === null) {
+      throw new ObsidianDailyTodoServiceError(
+        'todo-conflict',
+        'The todo or its work record changed on disk. Refresh before updating it.'
+      )
+    }
+    await writeObsidianDailyTodoMarkdown(target.filePath, updated)
+    return { ok: true, snapshot: await readSnapshot(input.directory, target.filePath, now) }
+  } catch (error) {
+    return obsidianDailyTodoServiceErrorResult(error)
+  }
+}
+
+export async function deleteObsidianDailyTodoFromNote(
+  input: ObsidianDailyTodoDeleteInput,
+  now: Date = new Date()
+): Promise<ObsidianDailyTodoResult> {
+  return mutateTodoMarkdown(input, now, (markdown) => deleteObsidianDailyTodo(markdown, input.todo))
+}
+
+export async function updateObsidianDailyTodoPriorityInNote(
+  input: ObsidianDailyTodoPriorityUpdate,
+  now: Date = new Date()
+): Promise<ObsidianDailyTodoResult> {
+  return mutateTodoMarkdown(input, now, (markdown) =>
+    updateObsidianDailyTodoPriority(markdown, input.todo, input.priority)
+  )
+}
+
+export async function saveObsidianDailyWorkRecordToNote(
+  input: ObsidianDailyWorkRecordSaveInput,
+  now: Date = new Date()
+): Promise<ObsidianDailyTodoResult> {
+  try {
+    validateObsidianDailyWorkRecordBody(input.body)
+    const target = await resolveRequestedNote(input.directory, input.filePath, now)
+    const markdown = await readObsidianDailyTodoMarkdown(target.filePath)
+    const currentTodos = parseObsidianDailyTodos(markdown)
+    const originalTodo = currentTodos.find((todo) => todo.lineNumber === input.todo.lineNumber)
+    const matchingTodos = currentTodos.filter((todo) => todo.rawLine === input.todo.rawLine)
+    if (originalTodo?.rawLine !== input.todo.rawLine && matchingTodos.length !== 1) {
+      throw new ObsidianDailyTodoServiceError(
+        'todo-conflict',
+        'The todo changed on disk. Refresh before saving its work record.'
+      )
+    }
+    const updated = saveObsidianDailyWorkRecord(
+      markdown,
+      input.todo.text,
+      input.body,
+      input.expectedBody
+    )
+    if (updated === null) {
+      throw new ObsidianDailyTodoServiceError(
+        'todo-conflict',
+        'The work record changed on disk. Refresh before saving it.'
+      )
+    }
+    await writeObsidianDailyTodoMarkdown(target.filePath, updated)
+    return { ok: true, snapshot: await readSnapshot(input.directory, target.filePath, now) }
+  } catch (error) {
+    return obsidianDailyTodoServiceErrorResult(error)
+  }
+}
+
+async function mutateTodoMarkdown(
+  input: ObsidianDailyTodoDeleteInput,
+  now: Date,
+  mutate: (markdown: string) => string | null
+): Promise<ObsidianDailyTodoResult> {
+  try {
+    const target = await resolveRequestedNote(input.directory, input.filePath, now)
+    const updated = mutate(await readObsidianDailyTodoMarkdown(target.filePath))
+    if (updated === null) {
+      throw new ObsidianDailyTodoServiceError(
+        'todo-conflict',
+        'The todo changed on disk. Refresh before updating it.'
+      )
+    }
+    await writeObsidianDailyTodoMarkdown(target.filePath, updated)
+    return { ok: true, snapshot: await readSnapshot(input.directory, target.filePath, now) }
+  } catch (error) {
+    return obsidianDailyTodoServiceErrorResult(error)
   }
 }
 
@@ -84,7 +219,7 @@ async function readSnapshot(
 ): Promise<ObsidianDailyTodoSnapshot> {
   const root = await resolveObsidianVaultRoot(directory)
   const dailyNotes = await discoverObsidianDailyNotes(root, forceDiscovery)
-  const today = localDate(now)
+  const today = formatObsidianDailyLocalDate(now)
   const normalizedRequestedFilePath = requestedFilePath
     ? await normalizeRequestedFilePath(requestedFilePath)
     : undefined
@@ -107,12 +242,13 @@ async function readSnapshot(
       relativePath: null,
       modifiedAt: null,
       todos: [],
+      workRecords: [],
       dailyNotes
     }
   }
 
   const [markdown, metadata] = await Promise.all([
-    readMarkdown(selected.filePath),
+    readObsidianDailyTodoMarkdown(selected.filePath),
     stat(selected.filePath)
   ])
   return {
@@ -123,6 +259,7 @@ async function readSnapshot(
     relativePath: selected.relativePath,
     modifiedAt: metadata.mtimeMs,
     todos: parseObsidianDailyTodos(markdown),
+    workRecords: parseObsidianDailyWorkRecords(markdown),
     dailyNotes
   }
 }
@@ -148,7 +285,7 @@ async function resolveRequestedNote(
   if (!recovered) {
     throw new ObsidianDailyTodoServiceError(
       'note-not-found',
-      `No daily note found for ${localDate(now)}.`
+      `No daily note found for ${formatObsidianDailyLocalDate(now)}.`
     )
   }
   return recovered
@@ -160,56 +297,4 @@ async function normalizeRequestedFilePath(filePath: string): Promise<string> {
   } catch {
     return filePath
   }
-}
-
-async function readMarkdown(filePath: string): Promise<string> {
-  try {
-    return await readFile(filePath, 'utf8')
-  } catch {
-    throw new ObsidianDailyTodoServiceError('read-failed', 'Could not read the daily note.')
-  }
-}
-
-async function writeMarkdown(filePath: string, markdown: string): Promise<void> {
-  try {
-    await writeFile(filePath, markdown, 'utf8')
-  } catch {
-    throw new ObsidianDailyTodoServiceError('write-failed', 'Could not update the daily note.')
-  }
-}
-
-function validateTodoText(text: string): void {
-  const normalized = text.trim()
-  if (!normalized || normalized.length > 1_000 || /[\r\n]/.test(normalized)) {
-    throw new ObsidianDailyTodoServiceError(
-      'invalid-input',
-      'Todo text must be one non-empty line under 1,000 characters.'
-    )
-  }
-}
-
-function localDate(date: Date): string {
-  const year = String(date.getFullYear())
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-class ObsidianDailyTodoServiceError extends Error {
-  constructor(
-    readonly code: Exclude<ObsidianDailyTodoResult, { ok: true }>['code'],
-    message: string
-  ) {
-    super(message)
-  }
-}
-
-function serviceErrorResult(error: unknown): Exclude<ObsidianDailyTodoResult, { ok: true }> {
-  if (error instanceof ObsidianDailyNoteDiscoveryError) {
-    return { ok: false, code: error.code, message: error.message }
-  }
-  if (error instanceof ObsidianDailyTodoServiceError) {
-    return { ok: false, code: error.code, message: error.message }
-  }
-  return { ok: false, code: 'read-failed', message: 'Could not access the Obsidian vault.' }
 }

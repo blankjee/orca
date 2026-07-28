@@ -107,7 +107,7 @@ import {
 import { useWebSessionTabsSync } from './runtime/web-session-tabs-sync'
 import { useGlobalFileDrop } from './hooks/useGlobalFileDrop'
 import { useRadixBodyPointerEventsRecovery } from './hooks/useRadixBodyPointerEventsRecovery'
-import { registerUpdaterBeforeUnloadBypass } from './lib/updater-beforeunload'
+import { registerAppRestartBeforeUnloadBypass } from './lib/app-restart-beforeunload'
 import {
   buildWorkspaceSessionPayload,
   shouldPersistWorkspaceSession
@@ -149,7 +149,7 @@ import { selectFloatingVisibleTabCount } from './store/selectors'
 import { selectActiveTerminalChromeState } from './store/active-terminal-chrome-selector'
 import type { VirtualizedScrollAnchor } from './hooks/useVirtualizedScrollAnchor'
 import type { RemoteWorkspacePatchResult } from '../../shared/remote-workspace-types'
-import type { OnboardingState, UpdateStatus } from '../../shared/types'
+import type { OnboardingState } from '../../shared/types'
 import {
   getFeatureTipsAppOpenDecision,
   isCliFeatureTipCompleted
@@ -308,7 +308,7 @@ const Landing = lazy(() => import('./components/Landing'))
 const WorktreeCreationPanel = lazy(
   () => import('./components/worktree-creation/WorktreeCreationPanel')
 )
-const TaskPage = lazy(() => import('./components/TaskPage'))
+const TaskPage = lazy(() => import('./components/TaskPage'), { reloadKey: 'task-page' })
 const AutomationsPage = lazy(() => import('./components/automations/AutomationsPage'))
 const ActivityPrototypePage = lazy(() => import('./components/activity/ActivityPrototypePage'))
 const Settings = lazy(() => import('./components/settings/Settings'))
@@ -343,9 +343,6 @@ const SshPassphraseDialog = lazy(() =>
   import('./components/settings/SshPassphraseDialog').then((module) => ({
     default: module.SshPassphraseDialog
   }))
-)
-const UpdateCard = lazy(() =>
-  import('./components/UpdateCard').then((module) => ({ default: module.UpdateCard }))
 )
 const ContextualTourOverlay = lazy(() =>
   import('./components/contextual-tours/ContextualTourOverlay').then((module) => ({
@@ -398,16 +395,6 @@ function applyRemoteWorkspacePatchStatus(
         ? 'Workspace changed on another device'
         : 'Remote workspace sync unavailable')
   })
-}
-
-function shouldMountUpdateCardForStatus(status: UpdateStatus): boolean {
-  if (status.state === 'idle') {
-    return false
-  }
-  if (status.state === 'checking' || status.state === 'not-available') {
-    return status.userInitiated === true
-  }
-  return true
 }
 
 function App(): React.JSX.Element {
@@ -504,7 +491,6 @@ function App(): React.JSX.Element {
     hasRequestedBackgroundTerminalWorktreeMount
   )
   const keybindings = useAppStore((s) => s.keybindings)
-  const updateStatus = useAppStore((s) => s.updateStatus)
   const activeContextualTourId = useAppStore((s) => s.activeContextualTourId)
   const leftSidebarShortcutLabel = useShortcutLabel('sidebar.left.toggle')
   const rightSidebarShortcutLabel = useShortcutLabel('sidebar.right.toggle')
@@ -650,7 +636,6 @@ function App(): React.JSX.Element {
   const persistedUIReady = useAppStore((s) => s.persistedUIReady)
   const shouldMountContextualTourOverlay = activeContextualTourId !== null
   const shouldMountSetupGuideTelemetryObserver = persistedUIReady
-  const shouldMountUpdateCard = shouldMountUpdateCardForStatus(updateStatus)
   const rightSidebarWidth = useAppStore((s) => s.rightSidebarWidth)
   const markdownTocPanelWidth = useAppStore((s) => s.markdownTocPanelWidth)
   const rightSidebarOpen = useAppStore((s) => s.rightSidebarOpen)
@@ -1292,7 +1277,7 @@ function App(): React.JSX.Element {
     })
   }, [])
 
-  useEffect(() => registerUpdaterBeforeUnloadBypass(), [])
+  useEffect(() => registerAppRestartBeforeUnloadBypass(), [])
 
   useEffect(() => {
     setRuntimeGraphSyncEnabled(workspaceSessionReady)
@@ -2687,18 +2672,6 @@ function App(): React.JSX.Element {
                   compact
                 >
                   <PetOverlay />
-                </RecoverableRenderErrorBoundary>
-              </Suspense>
-            ) : null}
-            {shouldMountUpdateCard ? (
-              <Suspense fallback={null}>
-                <RecoverableRenderErrorBoundary
-                  boundaryId="overlay.update-card"
-                  surface="overlay"
-                  resetKey={activeView}
-                  compact
-                >
-                  <UpdateCard />
                 </RecoverableRenderErrorBoundary>
               </Suspense>
             ) : null}

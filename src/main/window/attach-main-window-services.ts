@@ -1,14 +1,10 @@
 /* eslint-disable max-lines -- Why: this file is the central main-window IPC wiring point; splitting it during the mobile release compatibility rebase would increase release risk. */
 import { randomUUID } from 'node:crypto'
 
-import { app, ipcMain } from 'electron'
+import { ipcMain } from 'electron'
 import type { BrowserWindow } from 'electron'
 import type { Store } from '../persistence'
-import type {
-  CreateWorktreeResult,
-  UpdateCheckOptions,
-  WorktreeStartupLaunch
-} from '../../shared/types'
+import type { CreateWorktreeResult, WorktreeStartupLaunch } from '../../shared/types'
 import { registerRepoHandlers } from '../ipc/repos'
 import { registerWorktreeHandlers } from '../ipc/worktrees'
 import { registerWorkspaceCleanupHandlers } from '../ipc/workspace-cleanup'
@@ -19,14 +15,6 @@ import { registerRemoteWorkspaceHandlers } from '../ipc/remote-workspace'
 import { browserManager } from '../browser/browser-manager'
 import { hasSystemMediaAccess, requestSystemMediaAccess } from '../browser/browser-media-access'
 import type { OrcaRuntimeService } from '../runtime/orca-runtime'
-import {
-  checkForUpdatesFromMenu,
-  downloadUpdate,
-  getUpdateStatus,
-  quitAndInstall,
-  setupAutoUpdater,
-  dismissNudge
-} from '../updater'
 import { scheduleHistoryGc } from '../terminal-history'
 import { hydrateLocalPtyRegistryAtBoot } from '../memory/hydrate-local-pty-registry'
 import type { ClaudeRuntimeAuthPreparation } from '../claude-accounts/runtime-auth-service'
@@ -46,19 +34,6 @@ import {
   scheduleWorktreeBaseDirectoryWatcherSync,
   setWorktreeBaseDirectoryWatcherSyncContext
 } from '../ipc/worktree-base-directory-watcher'
-import { logStartupMilestone } from '../startup/startup-diagnostics'
-
-const UPDATER_SETUP_FALLBACK_MS = 15_000
-
-// Why: updater setup is deferred past first paint, but a manual check (app
-// menu or updater:check IPC) can arrive inside that window — it must run
-// against a configured updater (listeners, autoDownload=false, window ref),
-// so those entry points force the pending setup first.
-let pendingAutoUpdaterSetup: (() => void) | null = null
-
-export function ensureAutoUpdaterConfigured(): void {
-  pendingAutoUpdaterSetup?.()
-}
 
 let appReloadHandlerTokenCounter = 0
 let activeAppReloadHandlerToken: number | null = null
@@ -78,7 +53,6 @@ export function attachMainWindowServices(
     onBeforeRendererReload?: (args: { webContentsId: number; ignoreCache: boolean }) => void
     // Why: lets the PTY orphan sweep skip the one crash-recovery reload (#5787).
     isRecoveryReloadInFlight?: (webContentsId: number) => boolean
-    onBeforeUpdateQuit?: () => void | Promise<void>
   }
 ): void {
   registerAppReloadHandler(mainWindow, options?.onBeforeRendererReload)
@@ -137,54 +111,6 @@ export function attachMainWindowServices(
   registerSshHandlers(store, () => mainWindow, runtime)
   registerRemoteWorkspaceHandlers(store, () => mainWindow)
   registerFileDropRelay(mainWindow)
-  // Why: setupAutoUpdater's first getAutoUpdater() call synchronously
-  // require()s electron-updater in packaged builds — seconds on a cold
-  // Windows disk under Defender scanning (part of issue #7225's pre-paint
-  // stall) — so defer it past first paint. The timer fallback keeps update
-  // checks alive for renderers that crash-loop before ever painting.
-  let updaterSetupDone = false
-  const setupAutoUpdaterDeferred = (): void => {
-    if (updaterSetupDone || mainWindow.isDestroyed()) {
-      return
-    }
-    updaterSetupDone = true
-    setupAutoUpdater(mainWindow, {
-      getLastUpdateCheckAt: () => store.getUI().lastUpdateCheckAt,
-      onBeforeQuit: async () => {
-        try {
-          await options?.onBeforeUpdateQuit?.()
-        } finally {
-          store.flush()
-        }
-      },
-      setLastUpdateCheckAt: (timestamp) => {
-        store.updateUI({ lastUpdateCheckAt: timestamp })
-      },
-      getPendingUpdateNudgeId: () => store.getUI().pendingUpdateNudgeId ?? null,
-      getDismissedUpdateNudgeId: () => store.getUI().dismissedUpdateNudgeId ?? null,
-      setPendingUpdateNudgeId: (id) => {
-        // Why: the nudge lifecycle is owned by the main process. When applying a
-        // new campaign, persist the pending id AND clear the version dismissal
-        // together so relaunches cannot resurrect the old hidden-card state
-        // between nudge apply and renderer sync. When clearing (id is null),
-        // only touch pendingUpdateNudgeId — clearing dismissedUpdateVersion here
-        // would silently un-dismiss an update if the flow ever changes.
-        if (id) {
-          store.updateUI({ pendingUpdateNudgeId: id, dismissedUpdateVersion: null })
-        } else {
-          store.updateUI({ pendingUpdateNudgeId: null })
-        }
-      },
-      setDismissedUpdateNudgeId: (id) => {
-        store.updateUI({ dismissedUpdateNudgeId: id })
-      }
-    })
-    logStartupMilestone('updater-setup-done')
-  }
-  pendingAutoUpdaterSetup = setupAutoUpdaterDeferred
-  mainWindow.once('ready-to-show', () => setImmediate(setupAutoUpdaterDeferred))
-  const updaterSetupFallback = setTimeout(setupAutoUpdaterDeferred, UPDATER_SETUP_FALLBACK_MS)
-  updaterSetupFallback.unref?.()
   registerRuntimeWindowLifecycle(mainWindow, runtime)
 
   const allowedPermissions = new Set(['media', 'fullscreen', 'pointerLock'])
@@ -235,8 +161,10 @@ function registerAppReloadHandler(
     ) {
       return
     }
-    onBeforeRendererReload?.({ webContentsId: mainWebContents.id, ignoreCache: false })
-    mainWebContents.reload()
+    // Why: this path also recovers stale or partially replaced lazy chunks;
+    // bypass Chromium's module cache so the renderer cannot reload bad bytes.
+    onBeforeRendererReload?.({ webContentsId: mainWebContents.id, ignoreCache: true })
+    mainWebContents.reloadIgnoringCache()
   })
   mainWindow.on('closed', () => {
     if (activeAppReloadHandlerToken !== handlerToken) {
@@ -444,23 +372,4 @@ function registerFileDropRelay(mainWindow: BrowserWindow): void {
     // the relay closure so a destroyed BrowserWindow is not retained.
     ipcMain.removeListener(channel, relayFileDrop)
   })
-}
-
-export function registerUpdaterHandlers(_store: Store): void {
-  ipcMain.removeHandler('updater:getStatus')
-  ipcMain.removeHandler('updater:getVersion')
-  ipcMain.removeHandler('updater:check')
-  ipcMain.removeHandler('updater:download')
-  ipcMain.removeHandler('updater:quitAndInstall')
-  ipcMain.removeHandler('updater:dismissNudge')
-
-  ipcMain.handle('updater:getStatus', () => getUpdateStatus())
-  ipcMain.handle('updater:getVersion', () => app.getVersion())
-  ipcMain.handle('updater:check', (_event, options?: UpdateCheckOptions) => {
-    ensureAutoUpdaterConfigured()
-    return checkForUpdatesFromMenu(options)
-  })
-  ipcMain.handle('updater:download', () => downloadUpdate())
-  ipcMain.handle('updater:quitAndInstall', () => quitAndInstall())
-  ipcMain.handle('updater:dismissNudge', () => dismissNudge())
 }

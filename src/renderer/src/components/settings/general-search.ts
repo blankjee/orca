@@ -174,25 +174,6 @@ export const getGeneralCliSearchEntries = createLocalizedCatalog(() => [
   }
 ])
 
-export const getGeneralUpdateSearchEntries = createLocalizedCatalog(() => [
-  {
-    title: translate('auto.components.settings.general.search.e15af4eb64', 'Check for Updates'),
-    description: translate(
-      'auto.components.settings.general.search.79ff46776e',
-      'Check for app updates and install a newer Orca version.'
-    ),
-    keywords: [
-      ...translateSearchKeyword('auto.components.settings.general.search.f89a94773c', 'update'),
-      ...translateSearchKeyword('auto.components.settings.general.search.9e86ccd05c', 'version'),
-      ...translateSearchKeyword(
-        'auto.components.settings.general.search.c9d8c1ce66',
-        'release notes'
-      ),
-      ...translateSearchKeyword('auto.components.settings.general.search.e49e739a59', 'download')
-    ]
-  }
-])
-
 export const getGeneralAgentSearchEntries = createLocalizedCatalog(() => [
   {
     title: translate('auto.components.settings.general.search.db11502270', 'Default Agent'),
@@ -235,7 +216,6 @@ export function getGeneralPaneSearchEntries(
     ...(options.includeProjectRuntime === false ? [] : getGeneralProjectRuntimeSearchEntries()),
     ...getGeneralEditorSearchEntries(),
     ...getGeneralCliSearchEntries(),
-    ...getGeneralUpdateSearchEntries(),
     ...getGeneralSupportSearchEntries()
   ]
 }

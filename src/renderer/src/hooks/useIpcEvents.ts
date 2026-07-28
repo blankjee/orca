@@ -1,4 +1,4 @@
-/* oxlint-disable max-lines -- Why: this App-level IPC bridge intentionally keeps the renderer's main-process event contract in one place so shortcut, runtime, updater, and agent-status wiring do not drift across files. */
+/* oxlint-disable max-lines -- Why: this App-level IPC bridge intentionally keeps the renderer's main-process event contract in one place so shortcut, runtime, and agent-status wiring do not drift across files. */
 import { useEffect } from 'react'
 import { toast } from 'sonner'
 import { useAppStore } from '../store'
@@ -23,7 +23,6 @@ import { nextEditorFontZoomLevel, computeEditorFontSize } from '@/lib/editor-fon
 import type {
   TerminalLayoutSnapshot,
   TerminalPaneLayoutNode,
-  UpdateStatus,
   WorkspaceSessionState
 } from '../../../shared/types'
 import type {
@@ -2055,24 +2054,6 @@ export function useIpcEvents(): void {
         // Why: a phone opened this worktree; wake its slept agents on the host
         // renderer navigation-free (no desktop worktree/tab/view change).
         backgroundSleepingAgentWakeDispatcher.request(worktreeId)
-      })
-    )
-
-    // Hydrate initial update status then subscribe to changes
-    window.api.updater.getStatus().then((status) => {
-      useAppStore.getState().setUpdateStatus(status as UpdateStatus)
-    })
-
-    unsubs.push(
-      window.api.updater.onStatus((raw) => {
-        const status = raw as UpdateStatus
-        useAppStore.getState().setUpdateStatus(status)
-      })
-    )
-
-    unsubs.push(
-      window.api.updater.onClearDismissal(() => {
-        useAppStore.getState().clearDismissedUpdateVersion()
       })
     )
 

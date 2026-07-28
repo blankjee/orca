@@ -215,6 +215,7 @@ import {
 import { normalizeTerminalCursorStyleDefault } from '../shared/terminal-cursor-style-settings'
 import { normalizeTerminalLineHeight } from '../shared/terminal-line-height-settings'
 import { normalizeUiLanguage } from '../shared/ui-language'
+import { normalizeObsidianAiCaptureSettings } from '../shared/obsidian-ai-capture-settings'
 import { normalizeBrowserPageZoomLevel } from '../shared/browser-page-zoom'
 import { persistedUIValuesEqual } from '../shared/persisted-ui-equality'
 import {
@@ -2893,6 +2894,15 @@ export class Store {
         if (parsed.settings?.httpProxyUrl) {
           parsed.settings.httpProxyUrl = decrypt(parsed.settings.httpProxyUrl)
         }
+        const obsidianAiCapture = normalizeObsidianAiCaptureSettings(
+          parsed.settings?.obsidianAiCapture
+        )
+        if (obsidianAiCapture.apiKey) {
+          obsidianAiCapture.apiKey = decrypt(obsidianAiCapture.apiKey)
+        }
+        if (parsed.settings) {
+          parsed.settings.obsidianAiCapture = obsidianAiCapture
+        }
         if (parsed.ui?.browserKagiSessionLink) {
           parsed.ui.browserKagiSessionLink = decryptOptionalSecret(parsed.ui.browserKagiSessionLink)
         }
@@ -3703,12 +3713,19 @@ export class Store {
   private buildStateToSave(): string {
     // Why: secrets must be encrypted on disk. Clone state so the in-memory
     // this.state stays plaintext for the rest of the app.
+    const obsidianAiCapture = normalizeObsidianAiCaptureSettings(
+      this.state.settings.obsidianAiCapture
+    )
     const stateToSave = {
       ...this.getDurableState(),
       settings: {
         ...this.state.settings,
         opencodeSessionCookie: encrypt(this.state.settings.opencodeSessionCookie),
-        httpProxyUrl: encrypt(this.state.settings.httpProxyUrl ?? '')
+        httpProxyUrl: encrypt(this.state.settings.httpProxyUrl ?? ''),
+        obsidianAiCapture: {
+          ...obsidianAiCapture,
+          apiKey: encrypt(obsidianAiCapture.apiKey)
+        }
       },
       ui: {
         ...this.state.ui,
@@ -5352,6 +5369,11 @@ export class Store {
     }
     if ('uiLanguage' in updates) {
       sanitizedUpdates.uiLanguage = normalizeUiLanguage(updates.uiLanguage)
+    }
+    if ('obsidianAiCapture' in updates) {
+      sanitizedUpdates.obsidianAiCapture = normalizeObsidianAiCaptureSettings(
+        updates.obsidianAiCapture
+      )
     }
     if ('prBotAuthorOverrides' in updates) {
       // Why: every writer (desktop IPC, paired web RPC, and migrations) reaches

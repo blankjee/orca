@@ -34,7 +34,9 @@ function verifyPackagedDaemonEntryBoots(resourcesDir, options = {}) {
   const execPath = options.execPath || process.execPath
   const entryPath = assertPackagedDaemonEntryExists(resourcesDir)
 
-  const result = spawnSync(execPath, [entryPath], { encoding: 'utf8', timeout: 10_000 })
+  // Why: the first launch immediately after assembling a large macOS app can
+  // spend extra time in filesystem/security scanning even though warm boots are instant.
+  const result = spawnSync(execPath, [entryPath], { encoding: 'utf8', timeout: 30_000 })
   if (result.error) {
     throw new Error(
       `[verify-packaged-daemon-entry] could not launch daemon-entry.js: ${result.error.message}`

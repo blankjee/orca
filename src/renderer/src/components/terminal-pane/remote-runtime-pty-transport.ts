@@ -41,6 +41,7 @@ const REMOTE_TERMINAL_INPUT_FLUSH_MS = 8
 const REMOTE_TERMINAL_VIEWPORT_FLUSH_MS = 33
 const HOST_SESSION_ATTACH_POLL_MS = 150
 const HOST_SESSION_ATTACH_TIMEOUT_MS = 15_000
+const REMOTE_TERMINAL_RESUBSCRIBE_DELAYS_MS = [250, 500, 1_000, 2_000, 4_000, 8_000, 15_000]
 
 function isRemoteTerminalGoneMessage(message: string): boolean {
   return (
@@ -48,6 +49,12 @@ function isRemoteTerminalGoneMessage(message: string): boolean {
     message.includes('terminal_exited') ||
     message.includes('terminal_gone') ||
     message.includes('no_connected_pty')
+  )
+}
+
+function isRetryableRemoteTerminalTransportMessage(message: string): boolean {
+  return /could not connect to the remote orca runtime|remote orca runtime closed the connection|remote orca runtime connection could not be restored|remote orca runtime stopped responding|timed out (?:waiting for|while connecting to) the remote orca runtime|remote runtime connection closed|remote terminal stream is not connected/i.test(
+    message
   )
 }
 
@@ -91,6 +98,8 @@ export function createRemoteRuntimePtyTransport(
   let storedCallbacks: Parameters<PtyTransport['connect']>[0]['callbacks'] = {}
   let resubscribing = false
   let resubscribeRequested = false
+  let resubscribeRetryTimer: ReturnType<typeof setTimeout> | null = null
+  let resubscribeAttempt = 0
   let subscriptionGeneration = 0
   let pendingViewportClaim = false
   let pendingClaimInput = ''
@@ -233,7 +242,13 @@ export function createRemoteRuntimePtyTransport(
     }
     onPtySpawn?.(remotePtyId)
 
-    await subscribeToHandle()
+    try {
+      await subscribeToHandle()
+    } catch (error) {
+      if (!handleRemoteTerminalSubscriptionFailure(error)) {
+        return undefined
+      }
+    }
     if (destroyed || !connected || !remotePtyId) {
       return undefined
     }
@@ -404,6 +419,7 @@ export function createRemoteRuntimePtyTransport(
 
   function retireRemoteTerminalId(): void {
     connected = false
+    resetResubscribeBackoff()
     clearPendingViewportClaim()
     const stalePtyId = remotePtyId
     handle = null
@@ -429,6 +445,53 @@ export function createRemoteRuntimePtyTransport(
       return
     }
     storedCallbacks.onError?.(message)
+  }
+
+  function clearResubscribeRetryTimer(): void {
+    if (!resubscribeRetryTimer) {
+      return
+    }
+    clearTimeout(resubscribeRetryTimer)
+    resubscribeRetryTimer = null
+  }
+
+  function resetResubscribeBackoff(): void {
+    clearResubscribeRetryTimer()
+    resubscribeAttempt = 0
+  }
+
+  function scheduleResubscribeRetry(): void {
+    if (destroyed || !connected || !handle || resubscribeRetryTimer) {
+      return
+    }
+    const delay =
+      REMOTE_TERMINAL_RESUBSCRIBE_DELAYS_MS[
+        Math.min(resubscribeAttempt, REMOTE_TERMINAL_RESUBSCRIBE_DELAYS_MS.length - 1)
+      ]
+    resubscribeAttempt += 1
+    resubscribeRetryTimer = setTimeout(() => {
+      resubscribeRetryTimer = null
+      scheduleResubscribeAfterTransportClose()
+    }, delay)
+    if (typeof resubscribeRetryTimer.unref === 'function') {
+      resubscribeRetryTimer.unref()
+    }
+  }
+
+  function handleRemoteTerminalSubscriptionFailure(error: unknown): boolean {
+    const message = runtimeTerminalErrorMessage(error)
+    if (!isRetryableRemoteTerminalTransportMessage(message)) {
+      handleRemoteTerminalError(error)
+      return false
+    }
+    if (destroyed || !connected || !handle) {
+      return false
+    }
+    // Why: a transient runtime outage must not turn a recoverable restored pane
+    // into a fatal xterm banner; keep its handle and retry at a bounded cadence.
+    clearPendingViewportClaim()
+    scheduleResubscribeRetry()
+    return true
   }
 
   // Why: after a transport drop the host may have re-minted this pane's
@@ -464,13 +527,14 @@ export function createRemoteRuntimePtyTransport(
       resubscribeRequested = true
       return
     }
+    clearResubscribeRetryTimer()
     resubscribing = true
     const resubscribeHandle = handle
     void resubscribeAfterTransportClose(resubscribeHandle)
       .catch((error) => {
         if (!destroyed && connected && handle) {
           clearPendingViewportClaim()
-          handleRemoteTerminalError(error)
+          handleRemoteTerminalSubscriptionFailure(error)
         }
       })
       .finally(() => {
@@ -550,7 +614,7 @@ export function createRemoteRuntimePtyTransport(
         },
         onError: (message) => {
           if (isCurrentSubscription()) {
-            handleRemoteTerminalError(message)
+            handleRemoteTerminalSubscriptionFailure(message)
           }
         },
         onFitOverrideChanged: (event) => {
@@ -594,6 +658,7 @@ export function createRemoteRuntimePtyTransport(
     closeMultiplexedStream()
     multiplexedStream = nextStream
     multiplexedStreamHandle = subscribedHandle
+    resetResubscribeBackoff()
     // Why: a viewport change that landed during the subscribe round-trip took
     // the now-no-op one-shot fallback, so the stream record is still at the
     // subscribe-time size. Replay the latest remembered viewport so the PTY
@@ -672,7 +737,13 @@ export function createRemoteRuntimePtyTransport(
         }
         onPtySpawn?.(remotePtyId)
 
-        await subscribeToHandle()
+        try {
+          await subscribeToHandle()
+        } catch (error) {
+          if (!handleRemoteTerminalSubscriptionFailure(error)) {
+            return undefined
+          }
+        }
         if (destroyed || !connected || !remotePtyId) {
           return
         }
@@ -709,6 +780,7 @@ export function createRemoteRuntimePtyTransport(
       // attach so renderer stores and lifecycle guards never share raw aliases.
       remotePtyId = toRemoteRuntimePtyId(handle, currentRuntimeEnvironmentId)
       connected = true
+      resetResubscribeBackoff()
       desiredViewport = {
         cols: options.cols ?? 80,
         rows: options.rows ?? 24
@@ -722,8 +794,7 @@ export function createRemoteRuntimePtyTransport(
         if (handle === targetHandle && multiplexedStreamHandle !== targetHandle) {
           closeMultiplexedStream()
         }
-        clearPendingViewportClaim()
-        handleRemoteTerminalError(error)
+        handleRemoteTerminalSubscriptionFailure(error)
       })
     },
 
@@ -732,6 +803,7 @@ export function createRemoteRuntimePtyTransport(
       inputBatcher.clear()
       viewportBatcher.flush()
       outputProcessor.clearAccumulatedState()
+      resetResubscribeBackoff()
       if (!connected && !handle) {
         return
       }
@@ -753,6 +825,7 @@ export function createRemoteRuntimePtyTransport(
       viewportBatcher.flush()
       outputProcessor.clearAccumulatedState()
       connected = false
+      resetResubscribeBackoff()
       clearPendingViewportClaim()
       closeMultiplexedStream()
       storedCallbacks = {}

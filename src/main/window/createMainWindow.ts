@@ -384,12 +384,11 @@ export function createMainWindow(
   // position/size instead of maximizing on every launch. Debounce to avoid
   // hammering the persistence layer during continuous resize drags.
   let boundsTimer: ReturnType<typeof setTimeout> | null = null
-  // Why: once close has been initiated (user Cmd+Q, auto-updater relaunch,
-  // app.quit during quitAndInstall), Electron can still emit resize/move/
+  // Why: once close has been initiated, Electron can still emit resize/move/
   // unmaximize events while the OS tears the window down — persisting those
   // intermediate, often near-minimum bounds would clobber the user's real
-  // last-used size and cause the next launch (especially post-update
-  // relaunch) to come up at minWidth × minHeight. Freeze persistence as soon
+  // last-used size and cause the next launch to come up at minWidth ×
+  // minHeight. Freeze persistence as soon
   // as 'close' is observed.
   let windowClosing = false
   const saveBounds = (): void => {
@@ -431,10 +430,8 @@ export function createMainWindow(
   mainWindow.on('resize', saveBounds)
   mainWindow.on('move', saveBounds)
 
-  // Why: the auto-updater install path calls
-  // `win.removeAllListeners('close')` before quitting, so the per-window
-  // 'close' handler below never runs for update-triggered relaunches.
-  // Listen to app-level 'before-quit' as a second latch so resize/move
+  // Why: app-level quit can race the per-window close event. Listen to
+  // 'before-quit' as a second latch so resize/move
   // events emitted during window teardown don't persist shrink-to-min
   // bounds that would be restored on next launch.
   const freezeBoundsOnQuit = (): void => {
@@ -1214,10 +1211,10 @@ export function createMainWindow(
     // resume relay would leak and fire against a destroyed webContents.
     powerMonitor.removeListener('resume', onSystemResume)
     clearTrustedUIRendererWebContentsId(rendererWebContentsId)
-    // Why: on updater-triggered shutdown, BrowserWindow can emit `closed`
-    // after its webContents has already been destroyed. The destroyed
+    // Why: during shutdown, BrowserWindow can emit `closed` after its
+    // webContents has already been destroyed. The destroyed
     // webContents owns its listeners, so do not touch `mainWindow.webContents`
-    // here or the quit path can crash before Squirrel.Mac relaunches Orca.
+    // here or the quit path can crash before cleanup completes.
     app.removeListener('before-quit', freezeBoundsOnQuit)
   })
 

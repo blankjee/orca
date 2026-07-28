@@ -579,11 +579,6 @@ const BASE_LOCALE_KEY_OVERRIDES = {
     zh: '评审',
     ja: 'レビュー'
   },
-  'auto.components.UpdateCard.actionBadge': {
-    ko: '작업',
-    zh: '操作',
-    ja: '操作'
-  },
   'auto.components.settings.GitPane.b559bf9899': {
     ko: '예: feature',
     zh: '例如 feature',

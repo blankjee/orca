@@ -24,8 +24,17 @@ if (
     enableFlag: import.meta.env.VITE_ENABLE_REACT_GRAB
   })
 ) {
-  void import('react-grab').then(({ init }) => init())
-  void import('react-grab/styles.css')
+  void Promise.all([import('react-grab'), import('react-grab/styles.css?inline')]).then(
+    ([{ init }, { default: reactGrabStyles }]) => {
+      const style = document.createElement('style')
+      style.dataset.orcaReactGrab = 'true'
+      // Why: React Grab bundles global Tailwind utilities. Nesting them in the
+      // predeclared low-priority layer prevents development-only layout drift.
+      style.textContent = `@layer react-grab {${reactGrabStyles}}`
+      document.head.appendChild(style)
+      init()
+    }
+  )
 }
 
 applyDocumentTheme('system', { disableTransitions: false })

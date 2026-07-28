@@ -86,9 +86,19 @@ function recordReloadBreadcrumb(reloadKey: string, message: string): void {
 
 const wait = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
-// Suspends the React.lazy boundary while window.location.reload() tears the page
-// down, so the error fallback never flashes in the moment before the reload lands.
+// Suspends the React.lazy boundary while the renderer reload tears the page down,
+// so the error fallback never flashes in the moment before the reload lands.
 const SUSPEND_UNTIL_RELOAD = new Promise<never>(() => undefined)
+const RELOAD_SETTLE_MS = 1_500
+
+async function requestRendererReload(): Promise<void> {
+  const reloadThroughMain = window.api?.app?.reload
+  if (typeof reloadThroughMain === 'function') {
+    await reloadThroughMain()
+    return
+  }
+  window.location.reload()
+}
 
 function isKnownDynamicImportFailure(error: unknown): boolean {
   if (!(error instanceof Error)) {
@@ -149,8 +159,22 @@ export async function loadLazyWithRetry<T extends AnyComponent>(
       options.reloadKey ?? 'unknown',
       lastError instanceof Error ? lastError.message : String(lastError)
     )
-    window.location.reload()
-    return SUSPEND_UNTIL_RELOAD
+    const reloadRequest = requestRendererReload()
+    const reloadDidNotNavigate = reloadRequest.then(async () => {
+      // Why: beforeunload can veto a renderer reload. Retry once after the
+      // reload request settles so a rejected navigation cannot leave Suspense
+      // showing a permanent blank surface.
+      await wait(RELOAD_SETTLE_MS)
+      try {
+        return await factory()
+      } catch (error) {
+        if (isKnownDynamicImportFailure(error)) {
+          throw new LazyChunkLoadError(error)
+        }
+        throw error
+      }
+    })
+    return Promise.race([SUSPEND_UNTIL_RELOAD, reloadDidNotNavigate])
   }
 
   if (reloadGuardState === 'attempted' && isKnownDynamicImportFailure(lastError)) {

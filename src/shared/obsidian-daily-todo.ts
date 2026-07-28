@@ -5,6 +5,8 @@ export const OBSIDIAN_DAILY_TODO_STATUSES = [
   'cancelled'
 ] as const
 
+export const OBSIDIAN_DAILY_CHECK_GROUP = '每日check'
+
 export type ObsidianDailyTodoStatus = (typeof OBSIDIAN_DAILY_TODO_STATUSES)[number]
 
 export type ObsidianDailyTodoItem = {
@@ -34,6 +36,7 @@ export type ObsidianDailyTodoSnapshot = {
   relativePath: string | null
   modifiedAt: number | null
   todos: ObsidianDailyTodoItem[]
+  workRecords: ObsidianDailyWorkRecord[]
   dailyNotes: ObsidianDailyNoteSummary[]
 }
 
@@ -64,6 +67,7 @@ export type ObsidianDailyTodoAddInput = {
   text: string
   group?: string | null
   priority?: 'P1' | 'P2' | 'P3' | null
+  workRecordBody?: string | null
 }
 
 const TODO_LINE_PATTERN = /^(\s*)[-*]\s+\[([ xX/-])\]\s+(.+)$/
@@ -80,6 +84,7 @@ export function parseObsidianDailyTodos(markdown: string): ObsidianDailyTodoItem
   let group: string | null = null
   let priority: ObsidianDailyTodoItem['priority'] = null
   let fence: '```' | '~~~' | null = null
+  let workRecordHeadingLevel: number | null = null
 
   for (const [offset, line] of splitMarkdown(markdown).lines.entries()) {
     const trimmed = line.trim()
@@ -89,6 +94,28 @@ export function parseObsidianDailyTodos(markdown: string): ObsidianDailyTodoItem
       continue
     }
     if (fence) {
+      continue
+    }
+
+    const heading = trimmed.match(/^(#{1,6})\s+(.+?)\s*#*$/)
+    if (workRecordHeadingLevel !== null) {
+      if (!heading || heading[1].length > workRecordHeadingLevel) {
+        continue
+      }
+      workRecordHeadingLevel = null
+    }
+    if (heading?.[2].trim() === '工作记录') {
+      workRecordHeadingLevel = heading[1].length
+      group = null
+      priority = null
+      parents.length = 0
+      continue
+    }
+    if (heading && heading[1].length <= 2) {
+      // Why: checklist rows directly under 每日check are pinned Todos, not ungrouped leftovers.
+      group = isDailyCheckHeading(heading[2]) ? OBSIDIAN_DAILY_CHECK_GROUP : null
+      priority = null
+      parents.length = 0
       continue
     }
 
@@ -165,99 +192,7 @@ export function updateObsidianDailyTodoStatus(
   return joinMarkdown(document)
 }
 
-export function addObsidianDailyTodo(
-  markdown: string,
-  input: Pick<ObsidianDailyTodoAddInput, 'text' | 'group' | 'priority'>
-): string {
-  const document = splitMarkdown(markdown)
-  const text = input.text.trim()
-  const insertion = findTodoInsertion(document.lines, input.group ?? null, input.priority ?? null)
-  document.lines.splice(insertion.index, 0, ...insertion.prefix, `- [ ] ${text}`)
-  return joinMarkdown(document)
-}
-
-function findTodoInsertion(
-  lines: readonly string[],
-  targetGroup: string | null,
-  targetPriority: ObsidianDailyTodoItem['priority']
-): { index: number; prefix: string[] } {
-  let group: string | null = null
-  let priority: ObsidianDailyTodoItem['priority'] = null
-  let inTargetGroup = targetGroup === null
-  let inTargetPriority = inTargetGroup && targetPriority === null
-  let foundGroup = inTargetGroup
-  let foundPriority = inTargetPriority
-  let targetGroupEnd = lines.length
-  let targetPriorityEnd = lines.length
-  let fence: '```' | '~~~' | null = null
-
-  for (const [index, line] of lines.entries()) {
-    const trimmed = line.trim()
-    const fenceMarker = trimmed.startsWith('```') ? '```' : trimmed.startsWith('~~~') ? '~~~' : null
-    if (fenceMarker) {
-      fence = fence === fenceMarker ? null : fence || fenceMarker
-      continue
-    }
-    if (fence) {
-      continue
-    }
-    const groupMatch = trimmed.match(GROUP_PATTERN)
-    if (groupMatch) {
-      if (inTargetPriority) {
-        targetPriorityEnd = index
-      }
-      if (inTargetGroup) {
-        targetGroupEnd = index
-      }
-      group = groupMatch[1].trim()
-      priority = null
-      inTargetGroup = group === targetGroup
-      inTargetPriority = inTargetGroup && targetPriority === null
-      foundGroup ||= inTargetGroup
-      foundPriority ||= inTargetPriority
-      continue
-    }
-    const priorityMatch = trimmed.match(PRIORITY_PATTERN)
-    if (priorityMatch) {
-      if (inTargetPriority) {
-        targetPriorityEnd = index
-      }
-      priority = priorityMatch[1] as ObsidianDailyTodoItem['priority']
-      inTargetPriority = inTargetGroup && priority === targetPriority
-      foundPriority ||= inTargetPriority
-      continue
-    }
-    if (trimmed.startsWith('#') || trimmed.startsWith('<!-- daily-todo:end')) {
-      const headingLevel = trimmed.match(/^(#{1,6})\s/)?.[1].length ?? 0
-      if (inTargetPriority && (headingLevel <= 4 || trimmed.startsWith('<!--'))) {
-        targetPriorityEnd = index
-        inTargetPriority = false
-      }
-      if (inTargetGroup && (headingLevel <= 3 || trimmed.startsWith('<!--'))) {
-        targetGroupEnd = index
-        inTargetGroup = false
-      }
-      priority = null
-    }
-  }
-
-  if (foundPriority) {
-    return { index: targetPriorityEnd, prefix: [] }
-  }
-  if (foundGroup) {
-    return {
-      index: targetGroupEnd,
-      prefix: targetPriority ? [`#### ${targetPriority}`] : []
-    }
-  }
-  return {
-    index: lines.length,
-    prefix: [
-      ...(targetGroup ? [`### ${targetGroup}`] : []),
-      ...(targetPriority ? [`#### ${targetPriority}`] : [])
-    ]
-  }
-}
+export { addObsidianDailyTodo } from './obsidian-daily-todo-insertion'
 
 function splitMarkdown(markdown: string): { lines: string[]; newline: '\n' | '\r\n' } {
   return {
@@ -322,3 +257,10 @@ function stableTodoId(lineNumber: number, text: string): string {
   }
   return `${lineNumber}-${(hash >>> 0).toString(16)}`
 }
+
+function isDailyCheckHeading(heading: string): boolean {
+  return (
+    heading.replace(/\s+/g, '').toLocaleLowerCase() === OBSIDIAN_DAILY_CHECK_GROUP.toLowerCase()
+  )
+}
+import type { ObsidianDailyWorkRecord } from './obsidian-daily-work-record'

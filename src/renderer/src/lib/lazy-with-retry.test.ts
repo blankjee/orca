@@ -85,28 +85,18 @@ describe('loadLazyWithRetry', () => {
     expect(reload).not.toHaveBeenCalled()
   })
 
-  it('performs exactly one guarded reload after retries are exhausted', async () => {
+  it('performs one guarded reload and rejects instead of suspending forever when navigation is vetoed', async () => {
     const reload = spyOnReload()
     const factory = vi.fn(() => Promise.reject(chunkParseError()))
 
     const loaded = loadLazyWithRetry(factory, { retries: 2, baseDelayMs: 250 })
-    let settled = false
-    void loaded.then(
-      () => {
-        settled = true
-      },
-      () => {
-        settled = true
-      }
-    )
+    const settled = loaded.catch((error: unknown) => error)
     await vi.advanceTimersByTimeAsync(5000)
 
-    expect(factory).toHaveBeenCalledTimes(3)
+    expect(factory).toHaveBeenCalledTimes(4)
     expect(reload).toHaveBeenCalledTimes(1)
     expect(window.sessionStorage.getItem(RELOAD_GUARD_KEY)).toBe('1')
-    // The load promise must suspend (never settle) while the page reloads, so the
-    // error boundary never flashes.
-    expect(settled).toBe(false)
+    expect(isLazyChunkLoadError(await settled)).toBe(true)
   })
 
   it('does NOT reload twice — wraps known chunk failures once the guard is already set', async () => {
@@ -210,15 +200,7 @@ describe('loadLazyWithRetry', () => {
     const factory = vi.fn(() => Promise.reject(chunkParseError()))
 
     const loaded = loadLazyWithRetry(factory, { retries: 0, reloadKey: 'right-sidebar' })
-    let settled = false
-    void loaded.then(
-      () => {
-        settled = true
-      },
-      () => {
-        settled = true
-      }
-    )
+    const settled = loaded.catch((error: unknown) => error)
     await vi.advanceTimersByTimeAsync(5000)
 
     expect(recordBreadcrumb).toHaveBeenCalledTimes(1)
@@ -226,11 +208,11 @@ describe('loadLazyWithRetry', () => {
       name: 'lazy_chunk_reload',
       data: { reloadKey: 'right-sidebar', message: "Unexpected token ']'" }
     })
-    // The breadcrumb must land before window.location.reload() tears the page down.
+    // The breadcrumb must land before the reload request tears the page down.
     expect(recordBreadcrumb.mock.invocationCallOrder[0]).toBeLessThan(
       reload.mock.invocationCallOrder[0]
     )
-    expect(settled).toBe(false)
+    expect(isLazyChunkLoadError(await settled)).toBe(true)
   })
 
   it('re-throws the original error without reloading when there is no window (SSR / node)', async () => {
