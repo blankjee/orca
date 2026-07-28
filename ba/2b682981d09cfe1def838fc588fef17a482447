@@ -1,0 +1,25 @@
+config/electron-builder.config.cjs
+  s_8cf6fa83a5bc6c::t_cc372549aed13a 13,156-158
+config/packaged-runtime-node-modules.cjs
+  s_8cf6fa83a5bc6c::t_a5ec3a645e572c 230-240,463
+config/scripts/electron-builder-config.test.mjs
+  s_8cf6fa83a5bc6c::t_8cd1f3221b40d1 19,188-200
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "ba2b682981d09cfe1def838fc588fef17a482447",
+  "prompts": {},
+  "sessions": {
+    "s_8cf6fa83a5bc6c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019f87d7-20ee-72a2-8cd5-a1534315ab6c",
+        "model": "unknown"
+      },
+      "human_author": "huangjie.sc <huangjie.sc@bytedance.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
