@@ -10,6 +10,7 @@ const {
   createPackagedRuntimeNodeModuleResources,
   prunePackagedRuntimeNodeModules,
   verifyPackagedMainRuntimeDeps,
+  verifyPackagedRendererEntry,
   verifyPackagedRuntimePackageFiles
 } = require('./packaged-runtime-node-modules.cjs')
 
@@ -152,6 +153,9 @@ module.exports = {
     }
     prunePackagedRuntimeNodeModules(resourcesDir, context.electronPlatformName, context.arch)
     verifyPackagedRuntimePackageFiles(resourcesDir)
+    // Why: packaging can begin while a renderer build is still landing files;
+    // fail the artifact instead of shipping a main-process-only black screen.
+    verifyPackagedRendererEntry(resourcesDir)
     verifyPackagedMainRuntimeDeps(resourcesDir)
     // Why: boot the packaged daemon-entry under plain Node, but only for the
     // slice matching the packaging host's arch — daemon-entry.js is JS, yet it

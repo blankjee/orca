@@ -16,6 +16,7 @@ const {
   prunePackagedRuntimeTypeDeclarations,
   prunePackagedZodSources,
   verifyPackagedMainRuntimeDeps,
+  verifyPackagedRendererEntry,
   verifyPackagedRuntimePackageFiles
 } = require('../packaged-runtime-node-modules.cjs')
 
@@ -182,6 +183,19 @@ describe('electron-builder config', () => {
       '\\out\\main\\index.js'
     )
     expect(findAsarEntry(['/out/main/index.js'], 'out/main/index.js')).toBe('/out/main/index.js')
+  })
+
+  it('rejects a packaged app that is missing the renderer entry', async () => {
+    const resourcesDir = await mkdtemp(join(tmpdir(), 'orca-renderer-integrity-'))
+    try {
+      await writeFile(join(resourcesDir, 'app.asar'), '', 'utf8')
+
+      expect(() =>
+        verifyPackagedRendererEntry(resourcesDir, { listPackage: () => ['/out/main/index.js'] })
+      ).toThrow('Packaged renderer entry out/renderer/index.html was not found')
+    } finally {
+      await rm(resourcesDir, { recursive: true, force: true })
+    }
   })
 
   it('prunes non-target node-pty prebuilds from packaged runtime resources', async () => {

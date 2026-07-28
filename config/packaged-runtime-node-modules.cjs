@@ -227,6 +227,17 @@ function findAsarEntry(entries, expectedPath) {
   return entries.find((entry) => normalizeAsarEntryPath(entry) === expectedPath)
 }
 
+function verifyPackagedRendererEntry(resourcesDir, asar = require('@electron/asar')) {
+  const asarPath = join(resourcesDir, 'app.asar')
+  if (!existsSync(asarPath)) {
+    return
+  }
+  const expectedPath = 'out/renderer/index.html'
+  if (!findAsarEntry(asar.listPackage(asarPath), expectedPath)) {
+    throw new Error(`Packaged renderer entry ${expectedPath} was not found in ${asarPath}`)
+  }
+}
+
 function verifyPackagedMainRuntimeDeps(resourcesDir, asar = require('@electron/asar')) {
   const asarPath = join(resourcesDir, 'app.asar')
   if (!existsSync(asarPath)) {
@@ -449,5 +460,6 @@ module.exports = {
   prunePackagedRuntimeTypeDeclarations,
   prunePackagedZodSources,
   verifyPackagedMainRuntimeDeps,
+  verifyPackagedRendererEntry,
   verifyPackagedRuntimePackageFiles
 }
